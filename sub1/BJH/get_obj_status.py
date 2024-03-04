@@ -34,31 +34,25 @@ def Object_callback(data):
         rospy.loginfo('acceleration : x = {0} , y = {1}, z = {2} m/s'.format(data.npc_list[i].acceleration.x,data.npc_list[i].acceleration.y,data.npc_list[i].acceleration.z))
         rospy.loginfo('heading      : {} deg'.format(data.npc_list[i].heading))
         rospy.loginfo('size         : x = {0} , y = {1}, z = {2} m'.format(data.npc_list[i].size.x,data.npc_list[i].size.y,data.npc_list[i].size.z))
-    '''
-    rospy.loginfo('-------------------- Pedestrian -------------------------')
-    rospy.loginfo('NPC num :{}'.format(data.num_of_pedestrian))
-    for i in range(data.num_of_pedestrian) :
-        rospy.loginfo('--------------------Num {}-------------------------'.format(i))
-
-    rospy.loginfo('-------------------- Obstacle -------------------------')
-    rospy.loginfo('NPC num :{}'.format(data.num_of_obstacle))
-    for i in range(data.num_of_obstacle) :
-        rospy.loginfo('--------------------Num {}-------------------------'.format(i))
-        rospy.loginfo('name : {}'.format(data.obstacle_list[i].name))
         
-    '''
+        rospy.loginfo('-------------------- Pedestrian -------------------------')
+        rospy.loginfo('NPC num :{}'.format(data.num_of_pedestrian))
+        for i in range(data.num_of_pedestrian) :
+            rospy.loginfo('--------------------Num {}-------------------------'.format(i))
+
+        rospy.loginfo('-------------------- Obstacle -------------------------')
+        rospy.loginfo('NPC num :{}'.format(data.num_of_obstacle))
+        for i in range(data.num_of_obstacle) :
+            rospy.loginfo('--------------------Num {}-------------------------'.format(i))
+            rospy.loginfo('name : {}'.format(data.obstacle_list[i].name))
+        
 
 def listener():
     #TODO: (1) ROS 노드 이름 선언
     rospy.init_node('Obj_status_listener', anonymous=True)
 
     #TODO: (2) Subscriber 생성
-    '''
-    # ObjectStatusList 라는 Morai ROS 메세지 형식을 사용하여 Topic Subscriber 를 완성한다.
-    # Topic 이름은 시뮬레이터 Network 연결시 확인 가능하다.
-    rospy.Subscriber( 변수 1 , 변수 2 , Object_callback)
-
-    '''
+    rospy.Subscriber('/ObjectStatusList', ObjectStatusList, Object_callback)
 
     rospy.spin()
 

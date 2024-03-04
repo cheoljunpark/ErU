@@ -21,10 +21,19 @@ def srv_client():
     rospy.wait_for_service('/Service_MoraiEventCmd')
 
     #TODO: (2) 송신 될 메세지 변수 생성
+    lamp_cmd = Lamps()
+    lamp_cmd.turnSignal = 1
+    lamp_cmd.emergencySignal = 0
+        
+    set_Event_control = EventInfo()
+    set_Event_control.option = 7
+    set_Event_control.ctrl_mode = 1
+    set_Event_control.gear = 2
+    set_Event_control.lamps = lamp_cmd
     '''
     # 시뮬레이터로 송신 될 메세지 변수를 만든다.
     # 시뮬레이터에서 차량의 상태를 제어하는 옵션으로 차량의 control mode, 차량의 기어, 방향 지시 제어가 가능하다.
-    # option 은 이벤틑 제어를 요청하는 필드 옵션으로 1 : ctrl_mode, 2 : gear, 4 : lamps, 8 : set_pause 로 구성되어 있습니다.
+    # option 은 이벤트 제어를 요청하는 필드 옵션으로 1 : ctrl_mode, 2 : gear, 4 : lamps, 8 : set_pause 로 구성되어 있습니다.
     # option 에 각 값을 입력하여 원하는 제어 값만을 사용 가능합니다. 두개 이상의 제어 입력을 같이 사용하기 위해서는 각 옵션 값의 숫자를 더하면 됩니다.
     # (ctrl_mode + gear --> 1 + 2 = 3 입력)
     # ctrl_mode = 1: Keyboard / 3: automode / 4 : cruisemode
@@ -47,6 +56,8 @@ def srv_client():
     while not rospy.is_shutdown():
         try:
             #TODO: (3) Service 호출
+            ros_srv = rospy.ServiceProxy('/Service_MoraiEventCmd',MoraiEventCmdSrv)
+            result = ros_srv(set_Event_control)
             '''
             # MoraiEventCmdSrv 라는 Morai ROS 서비스 형식을 사용하여 Service 호출 함수를 만든다.
             # Service 호출 이름은 시뮬레이터 Network 연결시 확인 가능하다.
@@ -54,7 +65,6 @@ def srv_client():
             result = ros_srv( 변수 3 )
             
             '''
-
             #TODO: (4) Service 호출 결과 값 확인
             rospy.loginfo(result)
         except rospy.ServiceException as e:

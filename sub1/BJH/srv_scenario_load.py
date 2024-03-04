@@ -21,6 +21,16 @@ def srv_client():
     rospy.wait_for_service('/Service_MoraiSL')
 
     #TODO: (2) 송신 될 메세지 변수 생성
+    scenario_setting = ScenarioLoad()
+    scenario_setting.file_name = 'scenario_0'
+    scenario_setting.load_network_connection_data   = True
+    scenario_setting.delete_all                     = True
+    scenario_setting.load_ego_vehicle_data          = True
+    scenario_setting.load_surrounding_vehicle_data  = True
+    scenario_setting.load_pedestrian_data           = True
+    scenario_setting.load_obstacle_data             = True
+    scenario_setting.set_pause                      = True
+    
     '''
     # 시뮬레이터로 송신 될 메세지 변수를 만든다.
     # 시뮬레이터에 저장 된 시나리오를 불러오는 통신 메세지이다.
@@ -41,6 +51,8 @@ def srv_client():
     while not rospy.is_shutdown():
         try:
             #TODO: (3) Service 호출
+            ros_srv = rospy.ServiceProxy('/Service_MoraiSL',MoraiScenarioLoadSrv)
+            result = ros_srv(scenario_setting)
             '''
             # MoraiScenarioLoadSrv 라는 Morai ROS 서비스 형식을 사용하여 Service 호출 함수를 만든다.
             # Service 호출 이름은 시뮬레이터 Network 연결시 확인 가능하다.

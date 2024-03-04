@@ -14,6 +14,7 @@ from morai_msgs.msg import MultiEgoSetting
 
 def talker():
     #TODO: (1) publisher 생성
+    publisher = rospy.Publisher('/ego_setting', MultiEgoSetting, queue_size=10)
     '''
     # MultiEgoSetting 라는 Morai ROS 메세지 형식을 사용하여 Topic Publisher 를 완성한다.
     # Topic 이름은 시뮬레이터 Network 연결시 확인 가능하다.
@@ -23,6 +24,7 @@ def talker():
     rospy.init_node('Ego_setting_Command', anonymous=True)
 
     #TODO: (2) 송신 될 메세지 변수 생성
+    ego_setting_msg = MultiEgoSetting()
     '''
     # 시뮬레이터로 송신 될 메세지 변수를 만든다.
     # MultiEgoSetting 메세지는 차량의 위치와 상태를 바꾸는 명령어이다.
@@ -47,6 +49,7 @@ def talker():
     while not rospy.is_shutdown():
         rospy.loginfo(ego_setting_msg)
         #TODO: (3) /ego_setting 메세지 Publish
+        publisher.publish(ego_setting_msg)
         '''
         # ego_setting_msg 를 전송하는 publisher 를 만든다.
         publisher.
