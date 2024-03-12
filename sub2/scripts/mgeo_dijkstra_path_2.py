@@ -81,8 +81,10 @@ class dijkstra_path_pub :
             if self.is_goal_pose == True and self.is_init_pose == True:
                 break
             else:
-                rospy.loginfo('Waiting goal pose data')
-                rospy.loginfo('Waiting init pose data')
+                if self.is_goal_pose == False:
+                    rospy.loginfo('Waiting goal pose data')
+                if self.is_init_pose == False:
+                    rospy.loginfo('Waiting init pose data')
 
 
         self.global_path_msg = Path()
@@ -98,6 +100,7 @@ class dijkstra_path_pub :
             self.global_path_pub.
             
             '''
+            self.global_path_pub.publish(self.global_path_msg)
             rate.sleep()
     
     def init_callback(self,msg):
@@ -114,8 +117,20 @@ class dijkstra_path_pub :
         self.start_node = node_idx
 
         '''
+        clicked_position = msg.pose.pose.position
+        node_idx = ""
+        distance = float('inf')
+        for node_id in self.nodes.keys():
+            node = self.nodes[node_id]
+            node_position = node.point
+            tmp_distance = pow(node_position[0]-clicked_position.x,2)+ pow(node_position[1]-clicked_position.y,2) + pow(node_position[2]-clicked_position.z,2)
+            if(tmp_distance<distance):
+                distance = tmp_distance
+                node_idx = node.idx
 
+        self.start_node = node_idx
         self.is_init_pose = True
+        print('start_node: {}'.format(node_idx))
 
     def goal_callback(self,msg):
         #TODO: (2) 시작 Node 와 종료 Node 정의
@@ -131,20 +146,39 @@ class dijkstra_path_pub :
         self.end_node = node_idx
 
         '''
-
+        clicked_position = msg.pose.position
+        node_idx = ""
+        distance = float('inf')
+        for node_id in self.nodes.keys():
+            node = self.nodes[node_id]
+            node_position = node.point
+            tmp_distance = pow(node_position[0]-clicked_position.x,2)+ pow(node_position[1]-clicked_position.y,2) + pow(node_position[2]-clicked_position.z,2)
+            if(tmp_distance<distance):
+                distance = tmp_distance
+                node_idx = node.idx
+        print('end_node: {}'.format(node_idx))
+        self.end_node = node_idx
         self.is_goal_pose = True
 
     def calc_dijkstra_path_node(self, start_node, end_node):
 
-        result, path = self.global_planner.find_shortest_path(start_node, end_node)
+        result, path = self.global_planner.find_shortest_path(start_node, end_node) 
 
         #TODO: (10) dijkstra 경로 데이터를 ROS Path 메세지 형식에 맞춰 정의
+        point_path = path.get('point_path')
         out_path = Path()
         out_path.header.frame_id = '/map'
         '''
         # dijkstra 경로 데이터 중 Point 정보를 이용하여 Path 데이터를 만들어 줍니다.
 
         '''
+        if(result):
+            for point in point_path:
+                val = PoseStamped()
+                val.pose.position.x = point[0]
+                val.pose.position.y = point[1]
+                val.pose.position.z = point[2]
+                out_path.poses.append(val)
 
         return out_path
 
@@ -152,6 +186,7 @@ class Dijkstra:
     def __init__(self, nodes, links):
         self.nodes = nodes
         self.links = links
+        #TODO: (3) weight 값 계산
         self.weight = self.get_weight_matrix()
         self.lane_change_link_idx = []
 
@@ -174,7 +209,7 @@ class Dijkstra:
             # 현재 노드에서 다른 노드로 진행하는 모든 weight
             weight_from_this_node = dict()
             for to_node_id, to_node in self.nodes.items():
-                weight_from_this_node[to_node_id] = float('inf')
+                weight_from_this_node[to_node_id] = float('inf')   # 'inf' : 무한대 
             # 전체 weight matrix에 추가
             weight[from_node_id] = weight_from_this_node
 
@@ -197,6 +232,15 @@ class Dijkstra:
         # shortest_link 의 min_cost 를 계산 합니다.
 
         '''
+        shortest_link = Link()
+        min_cost = 1e9
+        for link_id in self.links.keys():
+            link = self.links[link_id]
+            if (link.from_node.idx==from_node.idx and link.to_node.idx==to_node.idx):
+                points_length = self.links[link.idx].points.size
+                if(points_length<min_cost):
+                    min_cost = points_length
+                    shortest_link = link       
 
         return shortest_link, min_cost
         

@@ -82,6 +82,8 @@ class dijkstra_path_pub :
         self.end_node = 'A119BS010148'
 
         '''
+        self.start_node = 'A119BS010705'
+        self.end_node = 'A119BS010277'
 
         self.global_path_msg = Path()
         self.global_path_msg.header.frame_id = '/map'
@@ -90,25 +92,30 @@ class dijkstra_path_pub :
 
         rate = rospy.Rate(10) # 10hz
         while not rospy.is_shutdown():
-            #TODO: (11) dijkstra 이용해 만든 Global Path 정보 Publish
-            '''
-            # dijkstra 이용해 만든 Global Path 메세지 를 전송하는 publisher 를 만든다.
-            self.global_path_pub.
-            
-            '''
+            #TODO: (11) dijkstra 이용해 만든 Global Pglobal_path_pubath 정보 Publish
+            self.global_path_pub.publish(self.global_path_msg)
+
             rate.sleep()
 
     def calc_dijkstra_path_node(self, start_node, end_node):
 
-        result, path = self.global_planner.find_shortest_path(start_node, end_node)
+        result, path = self.global_planner.find_shortest_path(start_node, end_node) 
 
         #TODO: (10) dijkstra 경로 데이터를 ROS Path 메세지 형식에 맞춰 정의
+        point_path = path.get('point_path')
         out_path = Path()
         out_path.header.frame_id = '/map'
         '''
         # dijkstra 경로 데이터 중 Point 정보를 이용하여 Path 데이터를 만들어 줍니다.
 
         '''
+        if(result):
+            for point in point_path:
+                val = PoseStamped()
+                val.pose.position.x = point[0]
+                val.pose.position.y = point[1]
+                val.pose.position.z = point[2]
+                out_path.poses.append(val)
 
         return out_path
 
@@ -139,7 +146,7 @@ class Dijkstra:
             # 현재 노드에서 다른 노드로 진행하는 모든 weight
             weight_from_this_node = dict()
             for to_node_id, to_node in self.nodes.items():
-                weight_from_this_node[to_node_id] = float('inf')
+                weight_from_this_node[to_node_id] = float('inf')   # 'inf' : 무한대 
             # 전체 weight matrix에 추가
             weight[from_node_id] = weight_from_this_node
 
@@ -162,6 +169,15 @@ class Dijkstra:
         # shortest_link 의 min_cost 를 계산 합니다.
 
         '''
+        shortest_link = Link()
+        min_cost = 1e9
+        for link_id in self.links.keys():
+            link = self.links[link_id]
+            if (link.from_node.idx==from_node.idx and link.to_node.idx==to_node.idx):
+                points_length = self.links[link.idx].points.size
+                if(points_length<min_cost):
+                    min_cost = points_length
+                    shortest_link = link       
 
         return shortest_link, min_cost
         
