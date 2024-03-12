@@ -82,8 +82,8 @@ class dijkstra_path_pub :
         self.end_node = 'A119BS010148'
 
         '''
-        self.start_node = 'A119BS010693'
-        self.end_node = 'A119BS010169'
+        self.start_node = 'A119BS010705'
+        self.end_node = 'A119BS010277'
 
         self.global_path_msg = Path()
         self.global_path_msg.header.frame_id = '/map'
