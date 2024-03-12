@@ -18,7 +18,7 @@ from nav_msgs.msg import Odometry,Path
 
 
 class global_path_pub :
-    def __init__(self, pkg_name = 'ssafy_2', path_name = "/kcity.txt"):
+    def __init__(self, pkg_name = 'ssafy_2', path_name = "/path/kcity.txt"):
         rospy.init_node('global_path_pub', anonymous = True)
 
         #TODO: (1) Global Path publisher 선언 및 Global Path 변수 생성 
@@ -52,7 +52,7 @@ class global_path_pub :
         for line in lines :
             tmp = line.split()
             read_pose = PoseStamped()
-            # print(tmp[0], tmp[1])
+            print(tmp[0], tmp[1])
             read_pose.pose.position.x = tmp[0]
             read_pose.pose.position.y = tmp[1]
             read_pose.pose.orientation.w = 1
