@@ -53,8 +53,8 @@ class global_path_pub :
             tmp = line.split()
             read_pose = PoseStamped()
             print(tmp[0], tmp[1])
-            read_pose.pose.position.x = tmp[0]
-            read_pose.pose.position.y = tmp[1]
+            read_pose.pose.position.x = float(tmp[0])
+            read_pose.pose.position.y = float(tmp[1])
             read_pose.pose.orientation.w = 1
             self.global_path_msg.poses.append(read_pose)        
         self.f.close()
