@@ -50,12 +50,12 @@ class pure_pursuit :
         # CtrlCmd 를 시뮬레이터로 전송 할 publisher 변수를 만든다.
         # CtrlCmd 은 1장을 참고 한다.
         # Ego topic 데이터는 차량의 현재 속도를 알기 위해 사용한다.
-        rospy.Subscriber("local_path" )
-        rospy.Subscriber("odom" )
-        rospy.Subscriber("/Ego_topic" )
-        self.ctrl_cmd_pub = 
 
         '''
+        rospy.Subscriber("/local_path", Path, self.path_callback)
+        rospy.Subscriber("/odom", Odometry, self.odom_callback)
+        rospy.Subscriber("/EgoVehicleStatus", EgoVehicleStatus, self.status_callback )
+        self.ctrl_cmd_pub = rospy.Publisher("/ctrl_cmd", CtrlCmd, queue_size=10)
 
         self.ctrl_cmd_msg=CtrlCmd()
         self.ctrl_cmd_msg.longlCmdType=1
@@ -100,8 +100,8 @@ class pure_pursuit :
                 '''
                 # 제어입력 메세지 를 전송하는 publisher 를 만든다.
                 self.ctrl_cmd_pub.
-                
                 '''
+                self.ctrl_cmd_pub.publish(self.ctrl_cmd_msg)
 
             rate.sleep()
 
@@ -120,7 +120,7 @@ class pure_pursuit :
         self.is_status=True
         self.status_msg=msg
 
-    def calc_pure_pursuit(self,): 
+    def calc_pure_pursuit(self,):                
         vehicle_position=self.current_postion
         self.is_look_forward_point= False
 
@@ -135,37 +135,38 @@ class pure_pursuit :
         # 전방주시거리(Look Forward Distance) 와 가장 가까운 Path Point 를 이용하여 조향 각도를 계산하게 됩니다.
         # 좌표 변환 행렬을 이용해 Path 데이터를 차량 기준 좌표 계로 바꾸는 반복 문을 작성 한 뒤
         # 전방주시거리(Look Forward Distance) 와 가장 가까운 Path Point 를 계산하는 로직을 작성 하세요.
+        '''
 
-        trans_matrix = np.array([   [                       ,                       ,               ],
-                                    [                       ,                       ,               ],
-                                    [0                      ,0                      ,1              ]])
+        trans_matrix = np.array([   [cos(self.vehicle_yaw), -sin(self.vehicle_yaw),translation[0]],
+                                    [sin(self.vehicle_yaw), cos(self.vehicle_yaw), translation[1]],
+                                    [0,0,1]])
 
-        det_trans_matrix = np.linalg.inv(trans_matrix)
+        det_trans_matrix = np.linalg.inv(trans_matrix)   # np.linalg.inv : 역행렬
 
-        for num,i in enumerate(self.path.poses) :
-            path_point = 
+        for pose in self.path.poses:
+            path_point = pose.pose.position
 
-            global_path_point = [ , , 1]
-            local_path_point = det_trans_matrix.dot(global_path_point)    
+            global_path_point = [path_point.x, path_point.y, 1]
+            local_path_point = det_trans_matrix.dot(global_path_point)   # 단위행렬
 
             if local_path_point[0]>0 :
-                dis = 
+                dis = sqrt(pow(local_path_point[0],2)+ pow(local_path_point[1],2))  # local_path_point.distance()
                 if dis >= self.lfd :
-                    self.forward_point = 
+                    self.forward_point = path_point
                     self.is_look_forward_point = True
                     break
 
-        '''
-
+        
         #TODO: (3) Steering 각도 계산
         '''
         # 제어 입력을 위한 Steering 각도를 계산 합니다.
         # theta 는 전방주시거리(Look Forward Distance) 와 가장 가까운 Path Point 좌표의 각도를 계산 합니다.
         # Steering 각도는 Pure Pursuit 알고리즘의 각도 계산 수식을 적용하여 조향 각도를 계산합니다.
-        theta = 
-        steering = 
-        
         '''
+        theta = atan2(self.forward_point.y - vehicle_position.y, self.forward_point.x - vehicle_position.x)
+        alpha = theta - self.vehicle_yaw
+        L = sqrt(pow(self.forward_point.y - vehicle_position.y, 2) + pow(self.forward_point.x - vehicle_position.x, 2))
+        steering = atan2(2.0 * self.vehicle_length * sin(alpha) / L, 1.0)
 
         return steering
 
@@ -186,15 +187,21 @@ class pidControl:
         # 종방향 제어를 위한 PID 제어기는 현재 속도와 목표 속도 간 차이를 측정하여 Accel/Brake 값을 결정 합니다.
         # 각 PID 제어를 위한 Gain 값은 "class pidContorl" 에 정의 되어 있습니다.
         # 각 PID Gain 값을 직접 튜닝하고 아래 수식을 채워 넣어 P I D 제어기를 완성하세요.
-
-        p_control = 
-        self.i_control += 
-        d_control = 
-
-        output = 
-        self.prev_error = 
+        # PID 제어는 원하는 값에 도달하기 위해 P, PI, PD, PID 등 제어 대상에 맞게 제어 방식을 선택해서 사용 할 수 있습니다.
+        # P I D 는 각 비례항 적분항 미분항 으로 구분 됩니다.
+        # P 비례항은 오차 값에 따라 출력이 변경됩니다.
+        # I 적분항은 누적되는 오차를 보안하는 역할을 합니다.
+        # D 미분항은 오차의 변화율에 반응하여 오차의 변화율이 크다면 빠르게 안정화 시키는 역할을 합니다.
 
         '''
+        # PID 제어 생성
+        p_control = self.p_gain * error
+        self.i_control += self.i_gain * error * self.controlTime
+        d_control = self.d_gain * (error - self.prev_error) / self.controlTime
+
+        # output : accel 값
+        output = p_control + self.i_control + d_control
+        self.prev_error = error
 
         return output
 
