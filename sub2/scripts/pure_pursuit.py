@@ -41,11 +41,11 @@ class pure_pursuit :
         # Local Path 와 Odometry 데이터를 수신 할 Subscriber 를 만들고 
         # CtrlCmd 를 시뮬레이터로 전송 할 publisher 변수를 만든다.
         # CtrlCmd 은 1장을 참고 한다.
-        rospy.Subscriber("local_path" )
-        rospy.Subscriber("odom" )
-        self.ctrl_cmd_pub = 
 
         '''
+        rospy.Subscriber("/local_path", Path, self.path_callback)
+        rospy.Subscriber("/odom", Odometry, self.odom_callback)
+        self.ctrl_cmd_pub = rospy.Publisher("/ctrl_cmd", CtrlCmd, queue_size=10)
 
         self.ctrl_cmd_msg=CtrlCmd()
         self.ctrl_cmd_msg.longlCmdType=2
@@ -59,7 +59,7 @@ class pure_pursuit :
         self.current_postion=Point()
 
         self.vehicle_length = 1
-        self.lfd = 1
+        self.lfd = 5
 
         rate = rospy.Rate(30) # 30hz
         while not rospy.is_shutdown():
@@ -70,18 +70,17 @@ class pure_pursuit :
                 if self.is_look_forward_point :
                     self.ctrl_cmd_msg.steering = steering
                     self.ctrl_cmd_msg.velocity = 20.0
-                    print(self.ctrl_cmd_msg.steering)
+                    rospy.loginfo("Steering angle: %.2f"%steering)
                 else : 
-                    print("no found forward point")
+                    rospy.loginfo("no found forward point")
                     self.ctrl_cmd_msg.steering = 0.0
                     self.ctrl_cmd_msg.velocity = 0.0
 
                 #TODO: (4) 제어입력 메세지 Publish
                 '''
-                # 제어입력 메세지 를 전송하는 publisher 를 만든다.
-                self.ctrl_cmd_pub.
-                
+                # 제어입력 메세지 를 전송하는 publisher 를 만든다
                 '''
+                self.ctrl_cmd_pub.publish(self.ctrl_cmd_msg)
 
             rate.sleep()
 
@@ -111,37 +110,38 @@ class pure_pursuit :
         # 전방주시거리(Look Forward Distance) 와 가장 가까운 Path Point 를 이용하여 조향 각도를 계산하게 됩니다.
         # 좌표 변환 행렬을 이용해 Path 데이터를 차량 기준 좌표 계로 바꾸는 반복 문을 작성 한 뒤
         # 전방주시거리(Look Forward Distance) 와 가장 가까운 Path Point 를 계산하는 로직을 작성 하세요.
+        '''
 
-        trans_matrix = np.array([   [                       ,                       ,               ],
-                                    [                       ,                       ,               ],
-                                    [0                      ,0                      ,1              ]])
+        trans_matrix = np.array([   [cos(self.vehicle_yaw), -sin(self.vehicle_yaw),translation[0]],
+                                    [sin(self.vehicle_yaw), cos(self.vehicle_yaw), translation[1]],
+                                    [0,0,1]])
 
-        det_trans_matrix = np.linalg.inv(trans_matrix)
+        det_trans_matrix = np.linalg.inv(trans_matrix)   # np.linalg.inv : 역행렬
 
-        for num,i in enumerate(self.path.poses) :
-            path_point = 
+        for pose in self.path.poses:
+            path_point = pose.pose.position
 
-            global_path_point = [ , , 1]
-            local_path_point = det_trans_matrix.dot(global_path_point)    
+            global_path_point = [path_point.x, path_point.y, 1]
+            local_path_point = det_trans_matrix.dot(global_path_point)   # 단위행렬
 
             if local_path_point[0]>0 :
-                dis = 
+                dis = sqrt(pow(local_path_point[0],2)+ pow(local_path_point[1],2))  # local_path_point.distance()
                 if dis >= self.lfd :
-                    self.forward_point = 
+                    self.forward_point = path_point
                     self.is_look_forward_point = True
                     break
 
-        '''
         
         #TODO: (3) Steering 각도 계산
         '''
         # 제어 입력을 위한 Steering 각도를 계산 합니다.
         # theta 는 전방주시거리(Look Forward Distance) 와 가장 가까운 Path Point 좌표의 각도를 계산 합니다.
         # Steering 각도는 Pure Pursuit 알고리즘의 각도 계산 수식을 적용하여 조향 각도를 계산합니다.
-        theta = 
-        steering = 
-
         '''
+        theta = atan2(self.forward_point.y - vehicle_position.y, self.forward_point.x - vehicle_position.x)
+        alpha = theta - self.vehicle_yaw
+        L = sqrt(pow(self.forward_point.y - vehicle_position.y, 2) + pow(self.forward_point.x - vehicle_position.x, 2))
+        steering = atan2(2.0 * self.vehicle_length * sin(alpha) / L, 1.0)
 
         return steering
 
