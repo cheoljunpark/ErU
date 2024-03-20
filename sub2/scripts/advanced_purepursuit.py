@@ -155,13 +155,11 @@ class pure_pursuit :
         # "self.min_lfd","self.max_lfd", "self.lfd_gain" 을 미리 정의합니다.
         # 최소 최대 전방주시거리(Look Forward Distance) 값과 속도에 비례한 lfd_gain 값을 직접 변경해 볼 수 있습니다.
         # 초기 정의한 변수 들의 값을 변경하며 속도에 비례해서 전방주시거리 가 변하는 advanced_purepursuit 예제를 완성하세요.
-        # 
-        self.lfd = 
+        '''
+        self.lfd = max(self.min_lfd, min(self.lfd_gain * self.status_msg.velocity.x, self.max_lfd))
 
         rospy.loginfo(self.lfd)
 
-        '''
-        
         vehicle_position=self.current_postion
         self.is_look_forward_point= False
 
