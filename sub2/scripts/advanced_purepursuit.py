@@ -74,7 +74,7 @@ class pure_pursuit :
         self.min_lfd = 5
         self.max_lfd = 30
         self.lfd_gain = 0.78
-        self.target_velocity = 60
+        self.target_velocity = 42
 
         self.pid = pidControl()
         self.vel_planning = velocityPlanning(self.target_velocity/3.6, 0.15)
@@ -202,13 +202,10 @@ class pure_pursuit :
         # Steering 각도는 Pure Pursuit 알고리즘의 각도 계산 수식을 적용하여 조향 각도를 계산합니다.
 
         '''
-        if(self.is_look_forward_point):
-            theta = atan2(self.forward_point.y - vehicle_position.y, self.forward_point.x - vehicle_position.x)
-            alpha = theta - self.vehicle_yaw
-            L = sqrt(pow(self.forward_point.y - vehicle_position.y, 2) + pow(self.forward_point.x - vehicle_position.x, 2))
-            steering = atan2(2.0 * self.vehicle_length * sin(alpha) / L, 1.0)
-        else:
-            steering = self.status_msg.wheel_angle
+        theta = atan2(self.forward_point.y - vehicle_position.y, self.forward_point.x - vehicle_position.x)
+        alpha = theta - self.vehicle_yaw
+        L = sqrt(pow(self.forward_point.y - vehicle_position.y, 2) + pow(self.forward_point.x - vehicle_position.x, 2))
+        steering = atan2(2.0 * self.vehicle_length * sin(alpha) / L, 1.0)
 
         return steering
 
@@ -284,7 +281,7 @@ class velocityPlanning:
             # 곡률 반경 x 중력가속도 x 도로의 마찰 계수 계산 값의 제곱근이 됩니다.
             '''
             g_accel = 9.81
-            friction = 0.8
+            friction = 0.7
             v_max = sqrt(r*g_accel*friction)
 
             if v_max > self.car_max_speed:
