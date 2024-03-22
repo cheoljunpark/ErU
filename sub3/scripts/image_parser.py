@@ -52,7 +52,7 @@ class IMGParser:
         # cv2.waitKey 함수의 단위는 ms 입니다.
         '''
         cv2.imshow('image', img_bgr)
-        cv2.waitKey(1000) 
+        cv2.waitKey(1) 
 
 
 if __name__ == '__main__':
