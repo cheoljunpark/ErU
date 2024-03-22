@@ -50,7 +50,7 @@ class IMGParser:
         # 이미지를 출력 합니다.
         '''
         cv2.imshow('image', img_concat)
-        cv2.waitKey(1000) 
+        cv2.waitKey(1) 
 
 
 if __name__ == '__main__':
