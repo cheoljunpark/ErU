@@ -35,8 +35,8 @@ class IMGParser:
         # 하한 값 행렬과 상한 값 행렬을 정해 그 사이의 값 만을 출력 하도록 합니다.
         # 이번 예제에서는 노란색 영역을 검출합니다.
         '''
-        lower_wlane = np.array([10,100,100])
-        upper_wlane = np.array([40,255,255])
+        lower_ylane = np.array([10,100,100])
+        upper_ylane = np.array([40,255,255])
 
         #TODO: (2)
         '''
@@ -44,10 +44,16 @@ class IMGParser:
         # cv2.inRange 함수를 이용하여 HSV 이미지에서 색상 범위를 지정합니다.
         # 함수의 첫번째 변수에는 이미지 정보를 두번째는 하한 값 세번째는 상한 값 행렬식을 넣습니다.
         '''
-        img_wlane = cv2.inRange(img_hsv, lower_wlane, upper_wlane)
+        img_ylane = cv2.inRange(img_hsv, lower_ylane, upper_ylane)
+
+        img_ylane_hsv = cv2.bitwise_and(img_hsv, img_hsv, mask=img_ylane)
+        img_ylane_area = cv2.cvtColor(img_ylane_hsv, cv2.COLOR_HSV2BGR)
+        
+        img_concat = np.concatenate((img_bgr, img_ylane_area), axis=1)
+        
 
         #TODO: (3) 이미지 출력
-        cv2.imshow("Image window", img_wlane)
+        cv2.imshow("Image window", img_concat)
         cv2.waitKey(1) 
 
 

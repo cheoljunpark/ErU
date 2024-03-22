@@ -47,9 +47,14 @@ class IMGParser:
         '''
         img_wlane = cv2.inRange(img_hsv, lower_wlane, upper_wlane)
         
+        img_wlane_hsv = cv2.bitwise_and(img_hsv, img_hsv, mask=img_wlane)
+        img_wlane_area = cv2.cvtColor(img_wlane_hsv, cv2.COLOR_HSV2BGR)
+        
+        img_concat = np.concatenate((img_bgr, img_wlane_area), axis=1)
+        
 
         #TODO: (3) 이미지 출력
-        cv2.imshow("Image window", img_wlane)
+        cv2.imshow("Image window", img_concat)
         cv2.waitKey(1) 
 
 
