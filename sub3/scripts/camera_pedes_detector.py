@@ -23,7 +23,7 @@ from cv_bridge import CvBridgeError
 # 8. 추출된 좌표 Detection 용 박스 화
 
 def non_maximum_supression(bboxes, threshold=0.3):
-    
+
     bboxes = sorted(bboxes, key=lambda detections: detections[3],
             reverse=True)
     new_bboxes=[]
@@ -45,21 +45,23 @@ def non_maximum_supression(bboxes, threshold=0.3):
             y1_br = bbox[1] + bbox[3]
             y2_br = new_bbox[1] + new_bbox[3]
 
+
             #TODO: (7)  IOU 계산
             '''
             이미지의 IoU를 계산하는 영역입니다.
             위에 입력된 파라미터를 이용하여 IoU를 계산 해 보시기 바랍니다.
-            x_overlap =
-            y_overlap =
-            overlap_area =
+						'''
+            x_overlap = min(x2_tl, x2_br) - max(x1_tl, x1_br)
+            y_overlap = min(y1_tl, y1_br) - max(y2_tl, y2_br)
+            overlap_area = x_overlap * y_overlap
             
-            area_1 =
-            area_2 =
+						#
+            area_1 = (x1_br - x1_tl) * (y1_br - y1_tl)
+            area_2 = (x2_br - x2_tl) * (y2_br - y2_tl)
             
-            total_area =
+            total_area = area_1 + area_2 - overlap_area
 
-            overlap_area =
-            '''
+            overlap_area = overlap_area / total_area
             if overlap_area < threshold:
                 
                 new_bboxes.append(bbox)
