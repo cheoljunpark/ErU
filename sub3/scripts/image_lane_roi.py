@@ -27,12 +27,11 @@ class IMGParser:
         이미지의 좌표를 직접 지정해도 되고,
         이미지의 비율로 정의해도 됩니다.
         np.array 사용
-        self.crop_pts =
-
         '''
+        self.crop_pts = np.array([[30,30],[30,y-30],[x-30,y-30],[x-30,30]], dtype=np.int32)
 
     def callback(self, msg):
-        # uint8 : unsined integer 0~255 로 만들기 위함입니다.
+        # uint8 : unsigned integer 0~255 로 만들기 위함입니다.
         try:
             np_arr = np.fromstring(msg.data, np.uint8)
             img_bgr = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
@@ -56,7 +55,6 @@ class IMGParser:
         
         # img.shape == [H,W,C]의 3차원이고 C RGB를 갖는 3채널입니다. RGB 이미지 입니다.
         if len(img.shape)==3:
-
             c = img.shape[2]
             mask = np.zeros((h, w, c), dtype=np.uint8)
 
@@ -64,8 +62,7 @@ class IMGParser:
 
         # grayscale image일 경우. (시뮬레이터에서 주는 이미지는 항상 3차원이기 때문에 예외를 위해서 만들어 놓은 부분 입니다.)
         else:
-
-            mask = np.zeros((h, w), dtype=np.uint8)
+            mask = np.zeros((h, w, 0), dtype=np.uint8)
 
             mask_value = (255)
         
@@ -78,15 +75,16 @@ class IMGParser:
         '''
         먼저 원하는 만큼의 좌표 점들을 선으로 긋고, 시작점과 끝점을 자동으로 연결하여 다각형을 그리는 함수를 opencv 함수를
         찾습니다.
-        cv2.
         '''
+        cv2.fillConvexPoly(mask, self.crop_pts, mask_value)
+        cv2.polylines(mask, [self.crop_pts], True, (0,255,0), 2)
 
         #TODO : (3)
         '''
         # 다음으로 RGB 이미지를 마스킹 하는 opencv 함수를 이용합니다. 비트연산을 하는 함수이며, 0,1을 이용하는 연산으로
         두 이미지의 동일한 위치에 대한 연산을 진행합니다.
-        mask = cv2.
         '''
+        mask = cv2.bitwise_and(img, mask)
         
         return mask
 
