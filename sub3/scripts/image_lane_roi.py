@@ -28,7 +28,7 @@ class IMGParser:
         이미지의 비율로 정의해도 됩니다.
         np.array 사용
         '''
-        self.crop_pts = np.array([[0,300],[x-10,300],[x-275,240],[275,240]], dtype=np.int32)
+        self.crop_pts = np.array([[10,300],[x-10,300],[x-270,250],[270,250]], dtype=np.int32)
 
     def callback(self, msg):
         # uint8 : unsigned integer 0~255 로 만들기 위함입니다.
