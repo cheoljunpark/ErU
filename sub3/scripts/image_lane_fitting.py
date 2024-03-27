@@ -27,11 +27,11 @@ from morai_msgs.msg import CtrlCmd, EgoVehicleStatus
 # 2. RANSAC Parameter 입력
 
 class IMGParser:
-    def __init__(self, pkg_name = 'ssafy_3'):
+    def __init__(self, pkg_name = 'sub3'):
 
         self.image_sub = rospy.Subscriber("/image_jpeg/compressed", CompressedImage, self.callback)
 
-        rospy.Subscriber("odom", Odometry, self.odom_callback)
+        rospy.Subscriber("/odom", Odometry, self.odom_callback)
 
         self.path_pub = rospy.Publisher('/lane_path', Path, queue_size=30)
 
@@ -43,8 +43,8 @@ class IMGParser:
         self.lower_wlane = np.array([0,0,205])
         self.upper_wlane = np.array([30,60,255])
 
-        self.lower_ylane = np.array([0,70,120])# ([0,60,100])
-        self.upper_ylane = np.array([40,195,230])# ([40,175,255])
+        self.lower_ylane = np.array([0,70,120]) # ([0,60,100])
+        self.upper_ylane = np.array([40,195,230]) # ([40,175,255])
 
         self.crop_pts = np.array([[[0,480],[0,350],[280,200],[360,200],[640,350],[640,480]]])
 
@@ -61,9 +61,18 @@ class IMGParser:
         '''
         CURVEFit Class의 Parameter를 결정하는 영역입니다.
         하단의 CURVEFit Class에 대한 정보를 바탕으로 적절한 Parameter를 입력하기 바랍니다.
-
-        curve_learner = CURVEFit(order=, lane_width= ,y_margin=, x_range=, min_pts=)
         '''
+        curve_learner = CURVEFit(order=2, alpha=0.1, lane_width=5.0, y_margin=10, x_range=20, dx=0.1, min_pts=20)
+
+        #  __init__(self, order, alpha, lane_width, y_margin, x_range, dx, min_pts):
+        # order(int):차선을 적합하는 데 사용되는 다항식의 차수
+        # alpha(float): Lasso 회귀 모델에 대한 alpha 매개 변수, Lasso 모델의 정규화 강도
+        # lane_width(float): 차선의 폭
+        # y_margin(float): RANSAC 알고리즘에서 이상치로 간주되는 임계값
+        # x_range(float): 차선을 적합할 대 사용되는 X 값의 범위
+        # dx(float): 차선을 샘플링할 때 사용되는 X 간격
+        # min_pts(int): 차선을 적합하기 위한 최소 포인트 수
+
         #END
         rate = rospy.Rate(10)
 
@@ -104,7 +113,7 @@ class IMGParser:
 
                 rate.sleep()
 
-    def odom_callback(self,msg): ## Vehicl Status Subscriber 
+    def odom_callback(self,msg): ## Vehicle Status Subscriber 
         self.status_msg=msg    
         self.is_status = True
 
@@ -371,7 +380,6 @@ class BEVTransform:
 
 class CURVEFit:    
     def __init__(self, order, alpha, lane_width, y_margin, x_range, dx, min_pts):
-
         self.order = order
         self.lane_width = lane_width
         self.y_margin = y_margin
@@ -386,19 +394,19 @@ class CURVEFit:
         # RANSAC Parameter를 결정하는 영역입니다.
         # RANSAC의 개념 및 아래 링크를 참고하여 적절한 Parameter를 입력하기 바랍니다.
         # https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RANSACRegressor.html
-        
+        '''
+
         self.ransac_left = linear_model.RANSACRegressor(base_estimator=linear_model.Lasso(alpha=alpha),
-                                                        max_trials=입력,
+                                                        max_trials=100,
                                                         loss='absolute_loss',
                                                         min_samples=self.min_pts,
                                                         residual_threshold=self.y_margin)
 
         self.ransac_right = linear_model.RANSACRegressor(base_estimator=linear_model.Lasso(alpha=alpha),
-                                                        max_trials=입력,
+                                                        max_trials=100,
                                                         loss='absolute_loss',
                                                         min_samples=self.min_pts,
                                                         residual_threshold=self.y_margin)
-        '''
         
         self._init_model()
 
@@ -445,14 +453,11 @@ class CURVEFit:
         return x_left, y_left, x_right, y_right
 
     def fit_curve(self, lane_pts):
-        # 기존 Curve를 바탕으로 Point 분류
-        x_left, y_left, x_right, y_right = self.preprocess_pts(lane_pts)
-        
-        if len(y_left)==0 or len(y_right)==0:
-
+        # 기존 Curve를 바탕으로 Point 분류      
+        rospy.loginfo(len(lane_pts))  
+        if len(lane_pts):
             self._init_model()
-
-            x_left, y_left, x_right, y_right = self.preprocess_pts(lane_pts)
+        x_left, y_left, x_right, y_right = self.preprocess_pts(lane_pts)
         
         # 1. 분류된 point들의 X좌표를 활용하야 Fit Input 생성
         # 2. RANSAC Fitting 수행
@@ -492,19 +497,14 @@ class CURVEFit:
         # overlap the lane
 
         if len(y_pred_l) == len(y_pred_r):
-
             if np.mean(y_pred_l + y_pred_r):
-
                 if y_pred_r[x_pred==3.0]>0:
-                    
                     y_pred_r = y_pred_l - self.lane_width
 
                 elif y_pred_l[x_pred==3.0]<0:
-                    
                     y_pred_l = y_pred_r + self.lane_width
 
             else:
-
                 pass
         
         else:
