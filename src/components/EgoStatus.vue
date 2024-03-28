@@ -1,40 +1,73 @@
 <template>
   <div>
-    <h2>topic: /Ego_status</h2>
-    <p>
-      Accel (%): <span>{{ accel }}</span>
-    </p>
-    <!-- 나머지 데이터 항목들 -->
+    <h2>Ego Vehicle Status</h2>
+    <p>Accel (%): <span>{{ accel }}</span></p>
+    <p>Brake (%): <span>{{ brake }}</span></p>
+    <p>Position X (UTM): <span>{{ positionX }}</span></p>
+    <p>Position Y (UTM): <span>{{ positionY }}</span></p>
+    <p>Velocity (km/h): <span>{{ velocity }}</span></p>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
-import ROSLIB from "roslib";
+import ROSLIB from 'roslib';
 
 export default {
-  setup() {
-    const accel = ref(0);
-    // 나머지 데이터 항목들의 ref 정의
-
-    onMounted(() => {
-      const ros = new ROSLIB.Ros({
-        url: "ws://localhost:9090",
-      });
-
-      const EgoTopicListener = new ROSLIB.Topic({
-        ros: ros,
-        name: "/Ego_topic",
-        messageType: "morai_msgs/EgoVehicleStatus",
-      });
-
-      EgoTopicListener.subscribe((data) => {
-        accel.value = data.accel * 100;
-        // 나머지 데이터 업데이트
-      });
-    });
-
-    return { accel /* 나머지 데이터 반환 */ };
+  name: 'EgoStatus',
+  data() {
+    return {
+      accel: 0,
+      brake: 0,
+      positionX: 0,
+      positionY: 0,
+      velocity: 0,
+      ros: null,
+    };
   },
+  mounted() {
+    this.connectToRos();
+  },
+  methods: {
+    connectToRos() {
+      this.ros = new ROSLIB.Ros({
+        url: 'ws://localhost:9090'
+      });
+
+      this.ros.on('connection', () => {
+        console.log('Connected to ROS.');
+        this.subscribeToEgoStatusTopic();
+      });
+
+      this.ros.on('error', (error) => {
+        console.error('Error connecting to ROS:', error);
+      });
+
+      this.ros.on('close', () => {
+        console.log('Connection to ROS closed.');
+      });
+    },
+    subscribeToEgoStatusTopic() {
+      const listener = new ROSLIB.Topic({
+        ros: this.ros,
+        name: '/Ego_topic',
+        messageType: 'morai_msgs/EgoVehicleStatus'
+      });
+
+      listener.subscribe((message) => {
+        this.accel = (message.accel * 100).toFixed(2);
+        this.brake = (message.brake * 100).toFixed(2);
+        this.positionX = message.position.x.toFixed(2);
+        this.positionY = message.position.y.toFixed(2);
+        let velocity = message.velocity.x;
+        if (velocity < 0) {
+          velocity = 0;
+        }
+        this.velocity = (velocity * 3.6).toFixed(2); // m/s to km/h
+      });
+    }
+  }
 };
 </script>
+
+<style scoped>
+</style>

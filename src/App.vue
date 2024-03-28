@@ -12,9 +12,9 @@
 // import HelloWorld from "./components/HelloWorld.vue";
 import EgoStatus from "./components/EgoStatus.vue";
 import RosConnectionStatus from "./components/RosConnectionStatus.vue";
-// import GPSStatus from './components/GPSStatus.vue'
-// import IMUStatus from './components/IMUStatus.vue'
-// import CameraView from './components/CameraView.vue'
+import GPSStatus from './components/GPSStatus.vue'
+import IMUStatus from './components/IMUStatus.vue'
+import CameraView from './components/CameraView.vue'
 
 export default {
   name: "App",
@@ -22,9 +22,9 @@ export default {
     // HelloWorld,
     EgoStatus,
     RosConnectionStatus,
-    // GPSStatus,
-    // IMUStatus,
-    // CameraView
+    GPSStatus,
+    IMUStatus,
+    CameraView,
   },
 };
 </script>
