@@ -1,19 +1,31 @@
 <template>
   <div>
     <h2>Ego Vehicle Status</h2>
-    <p>Accel (%): <span>{{ accel }}</span></p>
-    <p>Brake (%): <span>{{ brake }}</span></p>
-    <p>Position X (UTM): <span>{{ positionX }}</span></p>
-    <p>Position Y (UTM): <span>{{ positionY }}</span></p>
-    <p>Velocity (km/h): <span>{{ velocity }}</span></p>
+    <div id="chart" style="width: 600px; height: 300px"></div>
+    <p>
+      Accel (%): <span>{{ accel }}</span>
+    </p>
+    <p>
+      Brake (%): <span>{{ brake }}</span>
+    </p>
+    <p>
+      Position X (UTM): <span>{{ positionX }}</span>
+    </p>
+    <p>
+      Position Y (UTM): <span>{{ positionY }}</span>
+    </p>
+    <p>
+      Velocity (km/h): <span>{{ velocity }}</span>
+    </p>
   </div>
 </template>
 
 <script>
-import ROSLIB from 'roslib';
+import ROSLIB from "roslib";
+import Dygraph from "dygraphs";
 
 export default {
-  name: 'EgoStatus',
+  name: "EgoStatus",
   data() {
     return {
       accel: 0,
@@ -22,35 +34,39 @@ export default {
       positionY: 0,
       velocity: 0,
       ros: null,
+      graph: null,
+      data: [],
     };
   },
   mounted() {
     this.connectToRos();
+    this.initializeGraph();
   },
+
   methods: {
     connectToRos() {
       this.ros = new ROSLIB.Ros({
-        url: 'ws://localhost:9090'
+        url: "ws://localhost:9090",
       });
 
-      this.ros.on('connection', () => {
-        console.log('Connected to ROS.');
+      this.ros.on("connection", () => {
+        console.log("Connected to ROS.");
         this.subscribeToEgoStatusTopic();
       });
 
-      this.ros.on('error', (error) => {
-        console.error('Error connecting to ROS:', error);
+      this.ros.on("error", (error) => {
+        console.error("Error connecting to ROS:", error);
       });
 
-      this.ros.on('close', () => {
-        console.log('Connection to ROS closed.');
+      this.ros.on("close", () => {
+        console.log("Connection to ROS closed.");
       });
     },
     subscribeToEgoStatusTopic() {
       const listener = new ROSLIB.Topic({
         ros: this.ros,
-        name: '/Ego_topic',
-        messageType: 'morai_msgs/EgoVehicleStatus'
+        name: "/Ego_topic",
+        messageType: "morai_msgs/EgoVehicleStatus",
       });
 
       listener.subscribe((message) => {
@@ -63,11 +79,24 @@ export default {
           velocity = 0;
         }
         this.velocity = (velocity * 3.6).toFixed(2); // m/s to km/h
+        // Update Dygraphs data array
+        this.data.push([
+          new Date(),
+          parseFloat(this.accel),
+          parseFloat(this.brake),
+          parseFloat(this.velocity),
+        ]);
+        this.graph.updateOptions({ file: this.data });
       });
-    }
-  }
+    },
+    initializeGraph() {
+      this.graph = new Dygraph(document.getElementById("chart"), this.data, {
+        labels: ["Time", "Accel", "Brake", "Velocity"],
+        // Include additional Dygraphs options here
+      });
+    },
+  },
 };
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
