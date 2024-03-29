@@ -1,17 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, sys
-import time
 import rospy
 import rospkg
+import os
+import time
+import sys
 from math import cos,sin,pi,sqrt,pow,atan2
 from geometry_msgs.msg import Point,PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry,Path
-from morai_msgs.msg import CtrlCmd,EgoVehicleStatus
+from morai_msgs.msg import CtrlCmd,EgoVehicleStatus, GetTrafficLightStatus
 import numpy as np
 import tf
 from tf.transformations import euler_from_quaternion,quaternion_from_euler
+
+# from lib.mgeo.class_defs import *
+
+# current_path = os.path.dirname(os.path.realpath(__file__))
+# sys.path.append(current_path)
 
 # advanced_purepursuit 은 차량의 차량의 종 횡 방향 제어 예제입니다.
 # Purpusuit 알고리즘의 Look Ahead Distance 값을 속도에 비례하여 가변 값으로 만들어 횡 방향 주행 성능을 올립니다.
@@ -44,19 +50,6 @@ class pure_pursuit :
     def __init__(self):
         rospy.init_node('pure_pursuit', anonymous=True)
 
-        '''
-        #TODO: ros Launch File <arg> Tag 
-        # ros launch 파일 에는 여러 태그 를 사용 할 수 있지만 
-        # 그중 <arg> 태그를 사용하여 변수를 정의 할 수 있습니다.
-        # 3 장 에서는 사용하는 Path 정보와 Object 각 예제 별로 다르기 때문에
-        # launch 파일의 <arg> 태그를 사용하여 예제에 맞게 변수를 설정합니다.
-        
-        '''
-        arg = rospy.myargv(argv=sys.argv)
-        local_path_name = arg[1]
-
-        rospy.Subscriber(local_path_name, Path, self.path_callback)
-
         #TODO: (1) subscriber, publisher 선언
         '''
         # Local/Gloabl Path 와 Odometry Ego Status 데이터를 수신 할 Subscriber 를 만들고 
@@ -65,9 +58,11 @@ class pure_pursuit :
         # Ego topic 데이터는 차량의 현재 속도를 알기 위해 사용한다.
         # Gloabl Path 데이터는 경로의 곡률을 이용한 속도 계획을 위해 사용한다.
         '''
-        rospy.Subscriber("/global_path", Path, self.global_path_callback )
+        rospy.Subscriber("/global_path",Path, self.global_path_callback )
+        rospy.Subscriber("/local_path", Path, self.path_callback )
         rospy.Subscriber("/odom", Odometry, self.odom_callback )
         rospy.Subscriber("/Ego_topic", EgoVehicleStatus, self.status_callback)
+        rospy.Subscriber('/GetTrafficLightStatus', GetTrafficLightStatus, self.traffic_light_callback)
         self.ctrl_cmd_pub = rospy.Publisher("/ctrl_cmd", CtrlCmd, queue_size=10)
 
         self.ctrl_cmd_msg = CtrlCmd()
@@ -88,10 +83,19 @@ class pure_pursuit :
         self.min_lfd = 5
         self.max_lfd = 30
         self.lfd_gain = 0.78
-        self.target_velocity = 40
+        self.target_velocity = 30
+        self.traffic_light_status = 16
+        self.traffic_light_idx = ''
 
         self.pid = pidControl()
         self.vel_planning = velocityPlanning(self.target_velocity/3.6, 0.15)
+
+        # load_path = os.path.normpath(os.path.join(current_path, 'lib/mgeo_data/R_KR_PG_K-City'))
+        # mgeo_planner_map = MGeo.create_instance_from_json(load_path)
+
+        # traffic_light_set = mgeo_planner_map.light_set
+        # self.trafficlights = traffic_light_set.signals
+
         while True:
             if self.is_global_path == True:
                 self.velocity_list = self.vel_planning.curvedBaseVelocity(self.global_path, 50)
@@ -101,14 +105,11 @@ class pure_pursuit :
 
         rate = rospy.Rate(30) # 30hz
         while not rospy.is_shutdown():
-            
-
             if self.is_path == True and self.is_odom == True and self.is_status == True:
                 prev_time = time.time()
                 
                 self.current_waypoint = self.get_current_waypoint(self.status_msg,self.global_path)
                 self.target_velocity = self.velocity_list[self.current_waypoint]*3.6
-                
 
                 steering = self.calc_pure_pursuit()
                 if self.is_look_forward_point :
@@ -125,6 +126,21 @@ class pure_pursuit :
                 else:
                     self.ctrl_cmd_msg.accel = 0.0
                     self.ctrl_cmd_msg.brake = -output
+
+                # flag = False
+                # for idx, signal in self.trafficlights.items():
+                #     rospy.loginfo(type(signal.point), signal.point)
+                #     if idx == self.traffic_light_idx:
+                #         trafficlight_x = signal.point.x
+                #         trafficlight_y = signal.point.y
+                #         ego_x = self.status_msg.position.x
+                #         ego_y = self.status_msg.position.y
+                #         if sqrt(pow(ego_x-trafficlight_x)+pow(ego_y-trafficlight_y))<=10.0:
+                #             flag = True
+
+                if (self.traffic_light_status == 4 or self.traffic_light_status == 1):
+                    self.ctrl_cmd_msg.accel = 0.0
+                    self.ctrl_cmd_msg.brake = 1.0
 
                 #TODO: (8) 제어입력 메세지 Publish
                 self.ctrl_cmd_pub.publish(self.ctrl_cmd_msg)
@@ -144,11 +160,15 @@ class pure_pursuit :
 
     def status_callback(self,msg): ## Vehicl Status Subscriber 
         self.is_status=True
-        self.status_msg=msg    
+        self.status_msg=msg  
         
     def global_path_callback(self,msg):
         self.global_path = msg
         self.is_global_path = True
+
+    def traffic_light_callback(self, msg):
+        self.traffic_light_status = msg.trafficLightStatus
+        self.traffic_light_idx = msg.trafficLightIndex
     
     def get_current_waypoint(self,ego_status,global_path):
         min_dist = float('inf')        
@@ -172,9 +192,7 @@ class pure_pursuit :
         # "self.min_lfd","self.max_lfd", "self.lfd_gain" 을 미리 정의합니다.
         # 최소 최대 전방주시거리(Look Forward Distance) 값과 속도에 비례한 lfd_gain 값을 직접 변경해 볼 수 있습니다.
         # 초기 정의한 변수 들의 값을 변경하며 속도에 비례해서 전방주시거리 가 변하는 advanced_purepursuit 예제를 완성하세요.
-        # 
         '''
-        
         self.lfd = max(self.min_lfd, min(self.lfd_gain * self.status_msg.velocity.x, self.max_lfd))
 
         rospy.loginfo(self.lfd)
@@ -245,6 +263,7 @@ class pidControl:
         # 종방향 제어를 위한 PID 제어기는 현재 속도와 목표 속도 간 차이를 측정하여 Accel/Brake 값을 결정 합니다.
         # 각 PID 제어를 위한 Gain 값은 "class pidContorl" 에 정의 되어 있습니다.
         # 각 PID Gain 값을 직접 튜닝하고 아래 수식을 채워 넣어 P I D 제어기를 완성하세요.
+
         '''
         # PID 제어 생성
         p_control = self.p_gain * error
@@ -283,6 +302,7 @@ class velocityPlanning:
             # Path 데이터의 좌표를 이용해서 곡선의 곡률을 구하기 위한 수식을 작성합니다.
             # 원의 좌표를 구하는 행렬 계산식, 최소 자승법을 이용하는 방식 등 곡률 반지름을 구하기 위한 식을 적용 합니다.
             # 적용한 수식을 통해 곡률 반지름 "r" 을 계산합니다.
+
             '''
             x_array = np.array(x_list)
             y_array = np.array(y_list)
