@@ -62,7 +62,7 @@ class IMGParser:
         CURVEFit Class의 Parameter를 결정하는 영역입니다.
         하단의 CURVEFit Class에 대한 정보를 바탕으로 적절한 Parameter를 입력하기 바랍니다.
         '''
-        curve_learner = CURVEFit(order=2, alpha=0.1, lane_width=5.0, y_margin=10, x_range=20, dx=0.1, min_pts=20)
+        curve_learner = CURVEFit(order=2, alpha=0.1, lane_width=3.0, y_margin=10, x_range=20, dx=0.1, min_pts=20)
 
         #  __init__(self, order, alpha, lane_width, y_margin, x_range, dx, min_pts):
         # order(int):차선을 적합하는 데 사용되는 다항식의 차수
@@ -107,7 +107,7 @@ class IMGParser:
 
                 cv2.imshow("birdview", img_lane_fit)
                 cv2.imshow("img_warp", img_warp)
-                cv2.imshow("origin_img", self.img_bgr)
+                # cv2.imshow("origin_img", self.img_bgr)
 
                 cv2.waitKey(1)
 
