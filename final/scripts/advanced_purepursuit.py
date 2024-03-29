@@ -132,9 +132,11 @@ class pure_pursuit :
                     if idx == self.traffic_light_idx:
                         trafficlight_x = signal.point[0]
                         trafficlight_y = signal.point[1]
-                        ref_crosswalk_id = signal.ref_crosswalk_id
                         ego_x = self.status_msg.position.x
                         ego_y = self.status_msg.position.y
+                        dist = sqrt(pow(ego_x-trafficlight_x,2)+pow(ego_y-trafficlight_y,2))
+                        if dist <= 20.0:
+                            rospy.loginfo(dist)
                         if sqrt(pow(ego_x-trafficlight_x,2)+pow(ego_y-trafficlight_y,2))<=18.0:
                             flag = True
 
@@ -318,7 +320,7 @@ class velocityPlanning:
             # 곡률 반경 x 중력가속도 x 도로의 마찰 계수 계산 값의 제곱근이 됩니다.
             '''
             g_accel = 9.81
-            friction = 0.7
+            friction = 0.8
             v_max = sqrt(r*g_accel*friction)
 
             if v_max > self.car_max_speed:
