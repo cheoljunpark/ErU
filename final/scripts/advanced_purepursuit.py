@@ -14,10 +14,10 @@ import numpy as np
 import tf
 from tf.transformations import euler_from_quaternion,quaternion_from_euler
 
-# from lib.mgeo.class_defs import *
+from lib.mgeo.class_defs import *
 
-# current_path = os.path.dirname(os.path.realpath(__file__))
-# sys.path.append(current_path)
+current_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(current_path)
 
 # advanced_purepursuit 은 차량의 차량의 종 횡 방향 제어 예제입니다.
 # Purpusuit 알고리즘의 Look Ahead Distance 값을 속도에 비례하여 가변 값으로 만들어 횡 방향 주행 성능을 올립니다.
@@ -90,11 +90,11 @@ class pure_pursuit :
         self.pid = pidControl()
         self.vel_planning = velocityPlanning(self.target_velocity/3.6, 0.15)
 
-        # load_path = os.path.normpath(os.path.join(current_path, 'lib/mgeo_data/R_KR_PG_K-City'))
-        # mgeo_planner_map = MGeo.create_instance_from_json(load_path)
+        load_path = os.path.normpath(os.path.join(current_path, 'lib/mgeo_data/R_KR_PG_K-City'))
+        mgeo_planner_map = MGeo.create_instance_from_json(load_path)
 
-        # traffic_light_set = mgeo_planner_map.light_set
-        # self.trafficlights = traffic_light_set.signals
+        traffic_light_set = mgeo_planner_map.light_set
+        self.trafficlights = traffic_light_set.signals
 
         while True:
             if self.is_global_path == True:
@@ -127,18 +127,18 @@ class pure_pursuit :
                     self.ctrl_cmd_msg.accel = 0.0
                     self.ctrl_cmd_msg.brake = -output
 
-                # flag = False
-                # for idx, signal in self.trafficlights.items():
-                #     rospy.loginfo(type(signal.point), signal.point)
-                #     if idx == self.traffic_light_idx:
-                #         trafficlight_x = signal.point.x
-                #         trafficlight_y = signal.point.y
-                #         ego_x = self.status_msg.position.x
-                #         ego_y = self.status_msg.position.y
-                #         if sqrt(pow(ego_x-trafficlight_x)+pow(ego_y-trafficlight_y))<=10.0:
-                #             flag = True
+                flag = False
+                for idx, signal in self.trafficlights.items():
+                    if idx == self.traffic_light_idx:
+                        trafficlight_x = signal.point[0]
+                        trafficlight_y = signal.point[1]
+                        ref_crosswalk_id = signal.ref_crosswalk_id
+                        ego_x = self.status_msg.position.x
+                        ego_y = self.status_msg.position.y
+                        if sqrt(pow(ego_x-trafficlight_x,2)+pow(ego_y-trafficlight_y,2))<=18.0:
+                            flag = True
 
-                if (self.traffic_light_status == 4 or self.traffic_light_status == 1):
+                if (self.traffic_light_status == 4 or self.traffic_light_status == 1) and flag:
                     self.ctrl_cmd_msg.accel = 0.0
                     self.ctrl_cmd_msg.brake = 1.0
 
