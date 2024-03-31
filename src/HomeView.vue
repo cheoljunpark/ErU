@@ -22,7 +22,7 @@
         <GpsStatus />
       </div>
       <div class="mt-3 col-6 d-flex flex-column">
-        <EgoStatus class="shadow rounded" />
+        <EgoStatus class="shadow rounded" style="height: 100%" />
       </div>
     </div>
   </div>

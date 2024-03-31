@@ -1,15 +1,19 @@
 <template>
   <div>
     <h2>GPS Data</h2>
+
     <l-map
       :zoom="zoom"
       :center="currentPosition"
-      style="height: 400px; width: 100%"
+      style="height: 400px; width: 100%; margin-bottom: 30px; margin-top: 100px"
     >
       <l-tile-layer :url="tileUrl" />
-        <l-marker :lat-lng="currentPosition">
-          <l-icon :icon-url="customIcon.url" :icon-size="customIcon.size"></l-icon>
-        </l-marker>
+      <l-marker :lat-lng="currentPosition">
+        <l-icon
+          :icon-url="customIcon.url"
+          :icon-size="customIcon.size"
+        ></l-icon>
+      </l-marker>
     </l-map>
     <p>
       Altitude: <span>{{ gpsData.altitude }}</span>
@@ -25,8 +29,8 @@
 
 <script>
 import ROSLIB from "roslib";
-import { LMap, LTileLayer, LMarker, LIcon } from '@vue-leaflet/vue-leaflet';
-import 'leaflet/dist/leaflet.css';
+import { LMap, LTileLayer, LMarker, LIcon } from "@vue-leaflet/vue-leaflet";
+import "leaflet/dist/leaflet.css";
 
 export default {
   name: "GpsData",
@@ -43,9 +47,9 @@ export default {
       initialPosition: [124, 33],
       currentPosition: [0, 0],
       customIcon: {
-        url: 'https://zeevector.com/wp-content/uploads/Delivery-Icon-SVG-free-download.svg',
-        size: [38, 95]
-      }
+        url: "https://zeevector.com/wp-content/uploads/Delivery-Icon-SVG-free-download.svg",
+        size: [38, 95],
+      },
     };
   },
   components: {
@@ -126,7 +130,7 @@ export default {
   border: 2px solid #963; /* 박스의 테두리 */
   border-radius: 5px; /* 박스의 모서리를 둥글게 */
   padding: 8px; /* 내부 여백 */
-  
+
   /* 박스 테이프 모양 */
   position: relative; /* 테이프의 위치를 조절하기 위해 relative 설정 */
   overflow: hidden; /* 테이프가 박스를 넘어가지 않게 */
@@ -135,7 +139,7 @@ export default {
 .leaflet-control-custom::before,
 .leaflet-control-custom::after {
   /* 택배 테이프 디자인 */
-  content: '';
+  content: "";
   position: absolute;
   left: 50%;
   width: 10px; /* 테이프의 너비 */

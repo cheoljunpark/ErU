@@ -1,7 +1,10 @@
 <template>
   <div class="p-3">
     <h2>Ego Vehicle Status</h2>
-    <div id="chart" style="width: 600px; height: 300px"></div>
+    <div
+      id="chart"
+      style="width: 100%; height: 300px; margin-bottom: 30px; margin-top: 100px"
+    ></div>
     <p>
       Accel (%): <span>{{ accel }}</span>
     </p>
