@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="p-3">
     <h2>Ego Vehicle Status</h2>
     <div id="chart" style="width: 600px; height: 300px"></div>
     <p>

@@ -1,27 +1,28 @@
 <template>
-  <div class="out">
-    <div class="headbox">
-      <RosConnectionStatus />
+  <div class="container mt-3 d-flex flex-column text-center">
+    <div class="container mb-5 mt-5 shadow rounded">
+      <div class="col fs-1 fw-bold">
+        <RosConnectionStatus />
+      </div>
     </div>
-    <div class="container">
-      <div class="unit">
-        <div class="camera">
-          <CameraView />
+    <div class="row">
+      <div class="mt-3 col-2 d-flex flex-column">
+        <div class="row mb-3">
+          <div class="col">
+            <CameraView class="shadow rounded p-3" />
+          </div>
         </div>
-        <div class="imu">
-          <ImuStatus />
+        <div class="row mt-3">
+          <div class="col">
+            <ImuStatus class="shadow rounded p-3" />
+          </div>
         </div>
       </div>
-      <div class="map">
+      <div class="mt-3 col-4 shadow rounded p-3">
         <GpsStatus />
       </div>
-      <div class="unit2">
-        <div class="speed">
-          <EgoStatus />
-        </div>
-        <div class="another">
-          <p style height="60px;">heloo</p>
-        </div>
+      <div class="mt-3 col-6 d-flex flex-column">
+        <EgoStatus class="shadow rounded" />
       </div>
     </div>
   </div>
@@ -36,68 +37,10 @@ import EgoStatus from "./components/EgoStatus.vue";
 </script>
 
 <style scoped>
-.headbox {
-  background-color: blue;
-  height: 10%;
-  width: auto;
-  border-radius: 5%;
-}
-/* .out {
-  display: grid;
-  width: 100%;
-} */
-
-.container {
-  display: grid;
-  width: 100%;
-  grid-template-columns: 30% 40% 30%;
-  border-radius: 5%;
-}
-
-.unit {
-  display: grid;
-  height: auto;
-  grid-template-rows: 1fr 1fr;
-  background-color: brown;
-  margin: 3%;
-  border-radius: 5%;
-}
-
-.camera {
-  background-color: aquamarine;
-  border-radius: 5%;
-  margin: 3% 3% 1.5% 3%;
-}
-
-.imu {
-  background-color: beige;
-  border-radius: 5%;
-  margin: 1.5% 3% 3% 3%;
-}
-
-.map {
-  display: grid;
-  background-color: black;
-  border-radius: 5%;
-  margin: 3%;
-}
-
-.unit2 {
-  display: grid;
-  border-radius: 5%;
-}
-
-.speed {
-  display: grid;
-  background-color: blueviolet;
-  border-radius: 5%;
-  margin: 3% 3% 1.5% 3%;
-}
-
-.another {
-  display: grid;
-  background-color: chartreuse;
-  border-radius: 5%;
-  margin: 1.5% 3% 3% 3%;
+/* 다른 스타일들과 중복되는 스타일은 생략합니다. */
+.camera,
+.imu,
+.ego-status {
+  margin-bottom: 1.5rem; /* 컨텐츠 간격을 조정합니다. */
 }
 </style>
