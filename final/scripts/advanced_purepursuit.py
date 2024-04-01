@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import rospy
-import rospkg
+import json
 import os
 import time
 import sys
@@ -96,6 +96,19 @@ class pure_pursuit :
         traffic_light_set = mgeo_planner_map.light_set
         self.trafficlights = traffic_light_set.signals
 
+        self.bus_stop = False
+        self.bus_idx = 0
+
+        self.now_time = 0.0
+        self.prev_time = 0.0
+        
+
+        self.bus_stop_path = dict()
+        with open(os.path.join(current_path, 'lib/mgeo_data/bus_stop.json')) as f:
+            self.bus_stop_path = json.load(f)
+
+        # rospy.loginfo(self.bus_stop[0]["point"])
+
         while True:
             if self.is_global_path == True:
                 self.velocity_list = self.vel_planning.curvedBaseVelocity(self.global_path, 50)
@@ -106,44 +119,67 @@ class pure_pursuit :
         rate = rospy.Rate(30) # 30hz
         while not rospy.is_shutdown():
             if self.is_path == True and self.is_odom == True and self.is_status == True:
-                prev_time = time.time()
-                
-                self.current_waypoint = self.get_current_waypoint(self.status_msg,self.global_path)
-                self.target_velocity = self.velocity_list[self.current_waypoint]*3.6
-
-                steering = self.calc_pure_pursuit()
-                if self.is_look_forward_point :
-                    self.ctrl_cmd_msg.steering = steering
-                else : 
-                    rospy.loginfo("no found forward point")
-                    self.ctrl_cmd_msg.steering = 0.0
-                
-                output = self.pid.pid(self.target_velocity,self.status_msg.velocity.x*3.6)
-
-                if output > 0.0:
-                    self.ctrl_cmd_msg.accel = output
-                    self.ctrl_cmd_msg.brake = 0.0
+                self.now_time = time.time()
+                if self.bus_stop:
+                    if self.now_time-self.prev_time>6.0:
+                        self.bus_stop = False
+                        self.prev_time = self.now_time
                 else:
-                    self.ctrl_cmd_msg.accel = 0.0
-                    self.ctrl_cmd_msg.brake = -output
+                    self.current_waypoint = self.get_current_waypoint(self.status_msg,self.global_path)
+                    self.target_velocity = self.velocity_list[self.current_waypoint]*3.6
 
-                flag = False
-                for idx, signal in self.trafficlights.items():
-                    if idx == self.traffic_light_idx:
-                        trafficlight_x = signal.point[0]
-                        trafficlight_y = signal.point[1]
-                        ref_crosswalk_id = signal.ref_crosswalk_id
-                        ego_x = self.status_msg.position.x
-                        ego_y = self.status_msg.position.y
-                        if sqrt(pow(ego_x-trafficlight_x,2)+pow(ego_y-trafficlight_y,2))<=18.0:
-                            flag = True
+                    steering = self.calc_pure_pursuit()
+                    if self.is_look_forward_point :
+                        self.ctrl_cmd_msg.steering = steering
+                    else : 
+                        rospy.loginfo("no found forward point")
+                        self.ctrl_cmd_msg.steering = 0.0
+                    
+                    output = self.pid.pid(self.target_velocity,self.status_msg.velocity.x*3.6)
 
-                if (self.traffic_light_status == 4 or self.traffic_light_status == 1) and flag:
-                    self.ctrl_cmd_msg.accel = 0.0
-                    self.ctrl_cmd_msg.brake = 1.0
+                    if output > 0.0:
+                        self.ctrl_cmd_msg.accel = output
+                        self.ctrl_cmd_msg.brake = 0.0
+                    else:
+                        self.ctrl_cmd_msg.accel = 0.0
+                        self.ctrl_cmd_msg.brake = -output
 
-                #TODO: (8) 제어입력 메세지 Publish
-                self.ctrl_cmd_pub.publish(self.ctrl_cmd_msg)
+                    light_stop = False
+                    ego_x = self.status_msg.position.x
+                    ego_y = self.status_msg.position.y
+                    ego_z = self.status_msg.position.z
+                    for idx, signal in self.trafficlights.items():
+                        if idx == self.traffic_light_idx:
+                            trafficlight_x = signal.point[0]
+                            trafficlight_y = signal.point[1]
+                            trafficlight_z = signal.point[2]
+                            
+                            dist_light = sqrt(pow(ego_x-trafficlight_x,2)+pow(ego_y-trafficlight_y,2)+pow(ego_z-trafficlight_z,2))
+                            if dist_light<=20.0:
+                                light_stop = True
+
+                    if light_stop:
+                        if self.traffic_light_status == 4 or self.traffic_light_status == 1:
+                            self.ctrl_cmd_msg.accel = 0.0
+                            self.ctrl_cmd_msg.brake = 1.0
+
+                    for bus in self.bus_stop_path:
+                        if self.bus_idx==bus["idx"]:
+                            continue
+                        point = bus["point"]
+                        dist_bus = sqrt(pow(ego_x-point[0], 2)+pow(ego_y-point[1], 2)+pow(ego_z-point[2],2))
+                        if dist_bus <= 3.5:
+                            self.bus_stop = True
+                            self.bus_idx = bus["idx"]
+                            break
+
+                    if self.bus_stop:
+                        self.ctrl_cmd_msg.accel = 0.0
+                        self.ctrl_cmd_msg.brake = 1.0
+                        self.prev_time = self.now_time
+
+                    #TODO: (8) 제어입력 메세지 Publish
+                    self.ctrl_cmd_pub.publish(self.ctrl_cmd_msg)
                 
             rate.sleep()
 
@@ -194,8 +230,6 @@ class pure_pursuit :
         # 초기 정의한 변수 들의 값을 변경하며 속도에 비례해서 전방주시거리 가 변하는 advanced_purepursuit 예제를 완성하세요.
         '''
         self.lfd = max(self.min_lfd, min(self.lfd_gain * self.status_msg.velocity.x, self.max_lfd))
-
-        rospy.loginfo(self.lfd)
 
         vehicle_position=self.current_postion
         self.is_look_forward_point= False
@@ -317,7 +351,7 @@ class velocityPlanning:
             # 평평한 도로인 경우 최대 속도를 계산합니다. 
             # 곡률 반경 x 중력가속도 x 도로의 마찰 계수 계산 값의 제곱근이 됩니다.
             '''
-            g_accel = 9.81
+            g_accel = 9.8
             friction = 0.7
             v_max = sqrt(r*g_accel*friction)
 

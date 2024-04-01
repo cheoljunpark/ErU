@@ -10,7 +10,7 @@ import numpy as np
 import json
 
 from math import cos,sin,sqrt,pow,atan2,pi
-from geometry_msgs.msg import Point32,PoseStamped
+from geometry_msgs.msg import Point32,PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry,Path
 
 current_path = os.path.dirname(os.path.realpath(__file__))
@@ -20,6 +20,7 @@ from lib.mgeo.class_defs import *
 
 # mgeo_dijkstra_path_1 은 Mgeo 데이터를 이용하여 시작 Node 와 목적지 Node 를 지정하여 Dijkstra 알고리즘을 적용하는 예제 입니다.
 # 사용자가 직접 지정한 시작 Node 와 목적지 Node 사이 최단 경로 계산하여 global Path(전역경로) 를 생성 합니다.
+# 시작 Node 와 목적지 Node 는 Rviz 의 goal pose / initial pose 두 기능을 이용하여 정의합니다.
 
 # 노드 실행 순서 
 # 0. 필수 학습 지식
@@ -58,6 +59,9 @@ class dijkstra_path_pub :
 
         self.global_path_pub = rospy.Publisher('/global_path',Path, queue_size = 1)
 
+        rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.goal_callback)
+        rospy.Subscriber('/initialpose', PoseWithCovarianceStamped, self.init_callback)
+
         #TODO: (1) Mgeo data 읽어온 후 데이터 확인
         load_path = os.path.normpath(os.path.join(current_path, 'lib/mgeo_data/R_KR_PG_K-City'))
         mgeo_planner_map = MGeo.create_instance_from_json(load_path)
@@ -70,20 +74,18 @@ class dijkstra_path_pub :
 
         self.global_planner=Dijkstra(self.nodes,self.links)
 
-        #TODO: (2) 시작 Node 와 종료 Node 정의
-        '''
-        # Dijkstra Path 를 만들기 위한 출발 Node 와 도착 Node의 Idx 를 지정합니다.
-        # MGeo 데이터는 Json 파일로 Idx 정보를 확인 할 수 있지만 시뮬레이터를 통해 직접 확인 가능합니다.
-        # F8 키보드 입력 또는 시뮬레이터에서 화면 좌측 상단에 View --> MGeo Viewer 를 클릭합니다.
-        # MGeo Viewer 기능을 이용하여 맵에있는 MGeo 정보를 확인 할 수 있으며 시각화 까지 가능합니다.
-        # 해당 기능을 이용하여 원하는 시작 위치와 종료 위치의 Node 이름을 알아낸 뒤 아래 변수에 입력하세요.
-        
-        self.start_node = 'A119BS010184'
-        self.end_node = 'A119BS010148'
+        self.is_goal_pose = False
+        self.is_init_pose = False
 
-        '''
-        self.start_node = 'A119BS010213'
-        self.end_node = 'A119BS010243'
+        while True:
+            if self.is_goal_pose == True and self.is_init_pose == True:
+                break
+            else:
+                if self.is_goal_pose == False:
+                    rospy.loginfo('Waiting goal pose data')
+                if self.is_init_pose == False:
+                    rospy.loginfo('Waiting init pose data')
+
 
         self.global_path_msg = Path()
         self.global_path_msg.header.frame_id = '/map'
@@ -92,10 +94,71 @@ class dijkstra_path_pub :
 
         rate = rospy.Rate(10) # 10hz
         while not rospy.is_shutdown():
-            #TODO: (11) dijkstra 이용해 만든 Global Pglobal_path_pubath 정보 Publish
+            #TODO: (11) dijkstra 이용해 만든 Global Path 정보 Publish
+            '''
+            # dijkstra 이용해 만든 Global Path 메세지 를 전송하는 publisher 를 만든다.
+            self.global_path_pub.
+            
+            '''
             self.global_path_pub.publish(self.global_path_msg)
-
             rate.sleep()
+    
+    def init_callback(self,msg):
+        #TODO: (2) 시작 Node 와 종료 Node 정의
+        # 시작 Node 는 Rviz 기능을 이용해 지정한 위치에서 가장 가까이 있는 Node 로 한다.
+        '''
+        # Rviz 의 2D Pose Estimate 기능을 이용해 시작 Node를 지정합니다.
+        # Rviz 창에서 2D Pose Estimate 기능 클릭 후 마우스 좌 클릭을 통해 원하는 위치를 지정할 수 있습니다.
+        # 출발 위치를 2D Pose Estimate 지정 하면 Rviz 에서
+        # PoseWithCovarianceStamped 형식의 ROS 메세지를 Publish 합니다.
+        # 해당 형식의 메세지를 Subscribe 해서  2D Pose Estimate 로 지정한 위치와 가장 가까운 노드를 탐색하는 합니다.
+        # 가장 가까운 Node 가 탐색 된다면 이를 "self.start_node" 변수에 해당 Node Idx 를 지정합니다.
+
+        self.start_node = node_idx
+
+        '''
+        clicked_position = msg.pose.pose.position
+        node_idx = ""
+        distance = float('inf')
+        for node_id in self.nodes.keys():
+            node = self.nodes[node_id]
+            node_position = node.point
+            tmp_distance = pow(node_position[0]-clicked_position.x,2)+ pow(node_position[1]-clicked_position.y,2) + pow(node_position[2]-clicked_position.z,2)
+            if(tmp_distance<distance):
+                distance = tmp_distance
+                node_idx = node.idx
+
+        self.start_node = node_idx
+        self.is_init_pose = True
+        rospy.loginfo('start_node: {}'.format(node_idx))
+
+    def goal_callback(self,msg):
+        #TODO: (2) 시작 Node 와 종료 Node 정의
+        # 종료 Node 는 Rviz 기능을 이용해 지정한 위치에서 가장 가까이 있는 Node 로 한다.
+        '''
+        # Rviz 의 2D Nav Goal 기능을 이용해 도착 Node를 지정합니다.
+        # Rviz 창에서 2D Nav Goal 기능 클릭 후 마우스 좌 클릭을 통해 원하는 위치를 지정할 수 있습니다.
+        # 도착 위치를 2D Nav Goal 지정 하면 Rviz 에서
+        # PoseStamped 형식의 ROS 메세지를 Publish 합니다.
+        # 해당 형식의 메세지를 Subscribe 해서  2D Nav Goal 로 지정한 위치와 가장 가까운 노드를 탐색하는 합니다.
+        # 가장 가까운 Node 가 탐색 된다면 이를 "self.start_node" 변수에 해당 Node Idx 를 지정합니다.
+
+        self.end_node = node_idx
+
+        '''
+        clicked_position = msg.pose.position
+        node_idx = ""
+        distance = float('inf')
+        for node_id in self.nodes.keys():
+            node = self.nodes[node_id]
+            node_position = node.point
+            tmp_distance = pow(node_position[0]-clicked_position.x,2)+ pow(node_position[1]-clicked_position.y,2) + pow(node_position[2]-clicked_position.z,2)
+            if(tmp_distance<distance):
+                distance = tmp_distance
+                node_idx = node.idx
+        rospy.loginfo('end_node: {}'.format(node_idx))
+        self.end_node = node_idx
+        self.is_goal_pose = True
 
     def calc_dijkstra_path_node(self, start_node, end_node):
 
@@ -107,6 +170,7 @@ class dijkstra_path_pub :
         out_path.header.frame_id = '/map'
         '''
         # dijkstra 경로 데이터 중 Point 정보를 이용하여 Path 데이터를 만들어 줍니다.
+
         '''
         if(result):
             for point in point_path:

@@ -130,7 +130,7 @@ class dijkstra_path_pub :
 
         self.start_node = node_idx
         self.is_init_pose = True
-        print('start_node: {}'.format(node_idx))
+        rospy.loginfo('start_node: {}'.format(node_idx))
 
     def goal_callback(self,msg):
         #TODO: (2) 시작 Node 와 종료 Node 정의
@@ -156,7 +156,7 @@ class dijkstra_path_pub :
             if(tmp_distance<distance):
                 distance = tmp_distance
                 node_idx = node.idx
-        print('end_node: {}'.format(node_idx))
+        rospy.loginfo('end_node: {}'.format(node_idx))
         self.end_node = node_idx
         self.is_goal_pose = True
 
