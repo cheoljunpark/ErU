@@ -69,9 +69,9 @@ class latticePlanner:
 
         rate = rospy.Rate(50) # 30hz
         while not rospy.is_shutdown():
-
             if self.is_path and self.is_status and self.is_obj:
                 if self.checkObject(self.local_path, self.object_data):
+                    rospy.loginfo("object detected")
                     lattice_path = self.latticePlanner(self.local_path, self.status_msg)
                     lattice_path_index = self.collision_check(self.object_data, lattice_path)
 

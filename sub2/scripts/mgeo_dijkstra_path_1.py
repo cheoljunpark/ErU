@@ -9,9 +9,11 @@ import copy
 import numpy as np
 import json
 
-from math import cos,sin,sqrt,pow,atan2,pi
-from geometry_msgs.msg import Point32,PoseStamped
+from math import cos,sin,sqrt,pow,atan2,pi, exp
+from geometry_msgs.msg import Point32,PoseStamped, Point
+from morai_msgs.msg  import EgoVehicleStatus,ObjectStatusList
 from nav_msgs.msg import Odometry,Path
+import numpy as np
 
 current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(current_path)
@@ -57,6 +59,10 @@ class dijkstra_path_pub :
         rospy.init_node('dijkstra_path_pub', anonymous=True)
 
         self.global_path_pub = rospy.Publisher('/global_path',Path, queue_size = 1)
+        # 충돌 회피
+        rospy.Subscriber("/Object_topic",ObjectStatusList, self.object_callback)
+        # rospy.Subscriber("/local_path", Path, self.path_callback )
+        rospy.Subscriber("/Ego_topic", EgoVehicleStatus, self.status_callback)
 
         #TODO: (1) Mgeo data 읽어온 후 데이터 확인
         load_path = os.path.normpath(os.path.join(current_path, 'lib/mgeo_data/R_KR_PG_K-City'))
@@ -67,6 +73,10 @@ class dijkstra_path_pub :
 
         self.nodes=node_set.nodes
         self.links=link_set.lines
+
+        self.is_path = False
+        self.is_status = False
+        self.is_obj = False
 
         self.global_planner=Dijkstra(self.nodes,self.links)
 
@@ -92,9 +102,16 @@ class dijkstra_path_pub :
 
         rate = rospy.Rate(10) # 10hz
         while not rospy.is_shutdown():
-            #TODO: (11) dijkstra 이용해 만든 Global Pglobal_path_pubath 정보 Publish
-            self.global_path_pub.publish(self.global_path_msg)
+            #TODO: (11) dijkstra 이용해 만든 Global Path 정보 Publish
+            if self.is_path and self.is_status and self.is_obj:
+                if self.checkObject(self.global_path_msg, self.object_data):
+                    lattice_path = self.latticePlanner(self.global_path_msg, self.status_msg)
+                    lattice_path_index = self.collision_check(self.object_data, lattice_path)
 
+                    #TODO: (7) lattice 경로 메세지 Publish
+                    self.global_path_pub.publish(lattice_path[lattice_path_index])
+                else:
+                     self.global_path_pub.publish(self.global_path_msg)
             rate.sleep()
 
     def calc_dijkstra_path_node(self, start_node, end_node):
@@ -117,6 +134,188 @@ class dijkstra_path_pub :
                 val.pose.position.z = point[2]
                 out_path.poses.append(val)
 
+        self.is_path = True
+        return out_path
+    
+    def checkObject(self, ref_path, object_data):
+        #TODO: (2) 경로상의 장애물 탐색
+        '''
+        # 경로 상에 존재하는 장애물을 탐색합니다.
+        # 경로 상 기준이 되는 지역 경로(local path)에서 일정 거리 이상 가까이 있다면
+        # in_crash 변수를 True 값을 할당합니다.
+        '''
+        is_crash = False
+        for obstacle in object_data.obstacle_list:
+            for path in ref_path.poses:  
+                dis = sqrt(pow(obstacle.position.x - path.pose.position.x, 2) + pow(obstacle.position.y - path.pose.position.y, 2))                
+                if dis < 2.35: # 장애물의 좌표값이 지역 경로 상의 좌표값과의 직선거리가 2.35 미만일때 충돌이라 판단.
+                    is_crash = True
+                    break
+
+        return is_crash
+
+
+    def collision_check(self, object_data, out_path):
+        #TODO: (6) 생성된 충돌회피 경로 중 낮은 비용의 경로 선택
+        '''
+        # 충돌 회피 경로를 생성 한 이후 가장 낮은 비용의 경로를 선택 합니다.
+        # lane_weight 에는 기존 경로를 제외하고 좌 우로 3개씩 총 6개의 경로를 가지도록 합니다.
+        # 이 중 장애물이 있는 차선에는 가중치 값을 추가합니다.
+        # 모든 Path를 탐색 후 가장 비용이 낮은 Path를 선택하게 됩니다.
+        # 장애물이 존제하는 차선은 가중치가 추가 되어 높은 비용을 가지게 되기 떄문에 
+        # 최종적으로 가장 낮은 비용은 차선을 선택 하게 됩니다. 
+
+        '''
+        
+        selected_lane = -1        
+        lane_weight = [3, 2, 1, 1, 2, 3] #reference path 
+        
+        for obstacle in object_data.obstacle_list:                        
+            for path_num in range(len(out_path)) :                    
+                for path_pos in out_path[path_num].poses :                                
+                    dis = sqrt(pow(obstacle.position.x - path_pos.pose.position.x, 2) + pow(obstacle.position.y - path_pos.pose.position.y, 2))
+                    if dis < 1.5:
+                        lane_weight[path_num] = lane_weight[path_num] + 100
+
+        selected_lane = lane_weight.index(min(lane_weight))                    
+        return selected_lane
+        
+    def status_callback(self,msg): ## Vehicl Status Subscriber 
+        self.is_status = True
+        self.status_msg = msg
+
+    def object_callback(self,msg):
+        self.is_obj = True
+        self.object_data = msg
+
+    def latticePlanner(self,ref_path, vehicle_status):
+        out_path = []
+        vehicle_pose_x = vehicle_status.position.x
+        vehicle_pose_y = vehicle_status.position.y
+        vehicle_velocity = vehicle_status.velocity.x * 3.6
+
+        look_distance = int(vehicle_velocity * 0.2 * 2)
+
+        
+        if look_distance < 2 : #min 10m   
+            look_distance = 2                    
+
+        if len(ref_path.poses) > look_distance :
+            #TODO: (3) 좌표 변환 행렬 생성
+            """
+            # 좌표 변환 행렬을 만듭니다.
+            # Lattice 경로를 만들기 위해서 경로 생성을 시작하는 Point 좌표에서 
+            # 경로 생성이 끝나는 Point 좌표의 상대 위치를 계산해야 합니다.
+            
+            """
+
+            global_ref_start_point      = (ref_path.poses[0].pose.position.x, ref_path.poses[0].pose.position.y)
+            global_ref_start_next_point = (ref_path.poses[1].pose.position.x, ref_path.poses[1].pose.position.y)
+
+            global_ref_end_point = (ref_path.poses[look_distance * 2].pose.position.x, ref_path.poses[look_distance * 2].pose.position.y)
+            
+            theta = atan2(global_ref_start_next_point[1] - global_ref_start_point[1], global_ref_start_next_point[0] - global_ref_start_point[0])
+            translation = [global_ref_start_point[0], global_ref_start_point[1]]
+
+            trans_matrix    = np.array([    [cos(theta),                -sin(theta),                                                                      translation[0]], 
+                                            [sin(theta),                 cos(theta),                                                                      translation[1]], 
+                                            [         0,                          0,                                                                                  1 ]     ])
+
+            det_trans_matrix = np.array([   [trans_matrix[0][0], trans_matrix[1][0],        -(trans_matrix[0][0] * translation[0] + trans_matrix[1][0] * translation[1])], 
+                                            [trans_matrix[0][1], trans_matrix[1][1],        -(trans_matrix[0][1] * translation[0] + trans_matrix[1][1] * translation[1])],
+                                            [                 0,                  0,                                                                                   1]     ])
+
+            world_end_point = np.array([[global_ref_end_point[0]], [global_ref_end_point[1]], [1]])
+            local_end_point = det_trans_matrix.dot(world_end_point)
+            world_ego_vehicle_position = np.array([[vehicle_pose_x], [vehicle_pose_y], [1]])
+            local_ego_vehicle_position = det_trans_matrix.dot(world_ego_vehicle_position)
+            lane_off_set = [-3.0, -1.75, -1, 1, 1.75, 3.0]
+            local_lattice_points = []
+            
+            for i in range(len(lane_off_set)):
+                local_lattice_points.append([local_end_point[0][0], local_end_point[1][0] + lane_off_set[i], 1])
+            
+            #TODO: (4) Lattice 충돌 회피 경로 생성
+            '''
+            # Local 좌표계로 변경 후 3차곡선계획법에 의해 경로를 생성한 후 다시 Map 좌표계로 가져옵니다.
+            # Path 생성 방식은 3차 방정식을 이용하며 lane_change_ 예제와 동일한 방식의 경로 생성을 하면 됩니다.
+            # 생성된 Lattice 경로는 out_path 변수에 List 형식으로 넣습니다.
+            # 충돌 회피 경로는 기존 경로를 제외하고 좌 우로 3개씩 총 6개의 경로를 가지도록 합니다.
+            '''
+            for end_point in local_lattice_points :
+                curve_path = Path()
+                curve_path.header.frame_id = '/map'
+
+                waypoint_x = []
+                waypoint_y = []
+
+                off_set_x = 0.01
+                start_point_x = 0  # 시작점은 차선의 끝점으로 설정
+
+                end_point_x = end_point[0]
+                end_point_y = end_point[1]  # 끝점은 local_lattice_points에서 가져온 값 사용
+
+                mid_point_x = end_point_x / off_set_x
+                mid_point_y = end_point_y / (1 + exp(4))
+
+
+                for i in range(start_point_x, int(mid_point_x)):
+                    waypoint_x.append(i*off_set_x)
+
+                for i in waypoint_x :
+                    result = end_point_y / (1 + exp(-((8/end_point_x) * i - 3))) - mid_point_y
+                    waypoint_y.append(result)
+
+                for i in range(0, len(waypoint_y)) :
+                    local_result = np.array([[waypoint_x[i]], [waypoint_y[i]], [1]])
+                    global_result = trans_matrix.dot(local_result)
+
+                    pose = PoseStamped()
+                    pose.pose.position.x = global_result[0]
+                    pose.pose.position.y = global_result[1]
+                    pose.pose.position.z = 0
+                    pose.pose.orientation.x = 0
+                    pose.pose.orientation.y = 0
+                    pose.pose.orientation.z = 0
+                    pose.pose.orientation.w = 1
+                    curve_path.poses.append(pose)
+                out_path.append(curve_path)
+            
+
+            # Add_point            
+            # 3 차 곡선 경로가 모두 만들어 졌다면 이후 주행 경로를 추가 합니다.
+            add_point_size = min(int(vehicle_velocity * 2), len(ref_path.poses) )           
+            
+            for i in range(look_distance*2,add_point_size):
+                if i+1 < len(ref_path.poses):
+                    tmp_theta = atan2(ref_path.poses[i + 1].pose.position.y - ref_path.poses[i].pose.position.y,ref_path.poses[i + 1].pose.position.x - ref_path.poses[i].pose.position.x)                    
+                    tmp_translation = [ref_path.poses[i].pose.position.x,ref_path.poses[i].pose.position.y]
+                    tmp_t = np.array([[cos(tmp_theta), -sin(tmp_theta), tmp_translation[0]], [sin(tmp_theta), cos(tmp_theta), tmp_translation[1]], [0, 0, 1]])
+
+                    for lane_num in range(len(lane_off_set)) :
+                        local_result = np.array([[0], [lane_off_set[lane_num]], [1]])
+                        global_result = tmp_t.dot(local_result)
+
+                        read_pose = PoseStamped()
+                        read_pose.pose.position.x = global_result[0][0]
+                        read_pose.pose.position.y = global_result[1][0]
+                        read_pose.pose.position.z = 0
+                        read_pose.pose.orientation.x = 0
+                        read_pose.pose.orientation.y = 0
+                        read_pose.pose.orientation.z = 0
+                        read_pose.pose.orientation.w = 1
+                        out_path[lane_num].poses.append(read_pose)
+            
+            #TODO: (5) 생성된 모든 Lattice 충돌 회피 경로 메시지 Publish
+            '''
+            # 생성된 모든 Lattice 충돌회피 경로는 ros 메세지로 송신하여
+            # Rviz 창에서 시각화 하도록 합니다.
+            '''
+            for i in range(len(out_path)):          
+                globals()['lattice_pub_{}'.format(i+1)] = rospy.Publisher('/lattice_path_{}'.format(i+1),Path,queue_size=1)
+                globals()['lattice_pub_{}'.format(i+1)].publish(out_path[i])
+
+            
         return out_path
 
 class Dijkstra:
