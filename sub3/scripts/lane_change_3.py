@@ -48,10 +48,10 @@ class lc_path_pub :
         # launch 파일의 <arg> 태그를 사용하여 예제에 맞게 변수를 설정합니다.
 
         '''
-        arg = rospy.myargv(argv=sys.argv)
-        object_topic_name = arg[1]
+        # arg = rospy.myargv(argv=sys.argv)
+        # object_topic_name = arg[1]
 
-        rospy.Subscriber(object_topic_name, ObjectStatusList, self.object_info_callback)
+        rospy.Subscriber("/Object_topic", ObjectStatusList, self.object_info_callback)
 
         #TODO: (1) subscriber, publisher 선언
         '''
@@ -61,8 +61,8 @@ class lc_path_pub :
         # lane_change_path 의 Topic 이름은 '/lane_change_path' 이고
         # ROS 메시지 형식은 Path 이다.
         '''
-        rospy.Subscriber( "odom" )
-        self.odom_sub = rospy.Subscriber("/odom", Odometry, self.odom_callback)
+        # rospy.Subscriber( "odom" )
+        rospy.Subscriber("/odom", Odometry, self.odom_callback)
         self.global_path_pub = rospy.Publisher("/global_path", Path, queue_size=1)
         self.local_path_pub = rospy.Publisher("/lane_change_path", Path, queue_size=1)
 
@@ -73,16 +73,16 @@ class lc_path_pub :
 
         #TODO: (2) 두개의 차선 경로 의 텍스트파일을 읽기 모드로 열기
         rospack=rospkg.RosPack()
-        pkg_path=rospack.get_path('ssafy_3')
+        pkg_path=rospack.get_path('sub3')
         
         lc_1 = pkg_path + '/path' + '/lc_1.txt'
-        self.lc_1 = self.load_path_from_file(lc_1)
+        # self.lc_1 = self.load_path_from_file(lc_1)
         self.f=open(lc_1,'r')
 
         self.f.close()
 
         lc_2 = pkg_path + '/path' + '/lc_2.txt'
-        self.lc_2 = self.load_path_from_file(lc_2)
+        # self.lc_2 = self.load_path_from_file(lc_2)
         self.f=open(lc_2,'r')
 
         self.f.close()

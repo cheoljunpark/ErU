@@ -58,6 +58,10 @@ class pure_pursuit :
         # Ego topic 데이터는 차량의 현재 속도를 알기 위해 사용한다.
         # Gloabl Path 데이터는 경로의 곡률을 이용한 속도 계획을 위해 사용한다.
         '''
+        # arg = rospy.myargv(argv=sys.argv)
+        # local_path_name = arg[1]
+
+        # rospy.Subscriber(local_path_name, Path, self.path_callback)
         rospy.Subscriber("/global_path",Path, self.global_path_callback )
         rospy.Subscriber("/local_path", Path, self.path_callback )
         rospy.Subscriber("/odom", Odometry, self.odom_callback )
