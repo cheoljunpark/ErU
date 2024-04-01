@@ -1,7 +1,7 @@
 <template>
   <div>
     <p>
-      ROS_bridge Connection Status: <span :style="statusStyle">{{ status }}</span>
+      차량번호(51사 3429): <span :style="statusStyle">{{ status }}</span>
     </p>
   </div>
 </template>
@@ -21,18 +21,18 @@ export default {
       });
 
       ros.on("connection", () => {
-        status.value = "Connected";
+        status.value = "연결 성공";
         statusStyle.value = "font-size: x-large; color: green;";
       });
 
       ros.on("error", (error) => {
-        status.value = "Error";
+        status.value = "연결 에러";
         statusStyle.value = "font-size: x-large; color: red;";
         console.error("ROS 연결 에러:", error);
       });
 
       ros.on("close", () => {
-        status.value = "Closed";
+        status.value = "연결 취소";
         statusStyle.value = "font-size: x-large; color: orange;";
       });
     });
@@ -41,3 +41,11 @@ export default {
   },
 };
 </script>
+
+<style>
+p {
+  font-family: GoryeongStrawberry;
+  font-style: normal;
+  font-weight: normal;
+}
+</style>

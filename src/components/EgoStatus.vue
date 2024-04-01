@@ -1,21 +1,21 @@
 <template>
-  <div>
-    <h2>Ego Vehicle Status</h2>
-    <div id="chart" style="width: 600px; height: 300px"></div>
+  <div class="p-3">
+    <h2>실시간 차량 정보</h2>
+    <div id="chart" style="width: 100%; height: 300px; margin-bottom: 30px"></div>
     <p>
-      Accel (%): <span>{{ accel }}</span>
+      속력 (km/h): <span>{{ velocity }}</span>
     </p>
     <p>
-      Brake (%): <span>{{ brake }}</span>
+      액셀 (%): <span>{{ accel }}</span>
     </p>
     <p>
-      Position X (UTM): <span>{{ positionX }}</span>
+      브레이크 (%): <span>{{ brake }}</span>
     </p>
     <p>
-      Position Y (UTM): <span>{{ positionY }}</span>
+      X 좌표 (UTM): <span>{{ positionX }}</span>
     </p>
     <p>
-      Velocity (km/h): <span>{{ velocity }}</span>
+      Y 좌표 (UTM): <span>{{ positionY }}</span>
     </p>
   </div>
 </template>
@@ -99,4 +99,16 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+p {
+  font-family: GoryeongStrawberry;
+  font-style: normal;
+  font-weight: normal;
+}
+
+h2 {
+  font-family: GoryeongStrawberry;
+  font-style: normal;
+  font-weight: normal;
+}
+</style>

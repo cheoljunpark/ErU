@@ -82,4 +82,22 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+p {
+  font-family: GoryeongStrawberry;
+  font-style: normal;
+  font-weight: normal;
+}
+
+h2 {
+  font-family: GoryeongStrawberry;
+  font-style: normal;
+  font-weight: normal;
+}
+
+h4 {
+  font-family: GoryeongStrawberry;
+  font-style: normal;
+  font-weight: normal;
+}
+</style>

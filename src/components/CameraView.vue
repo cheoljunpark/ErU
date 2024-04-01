@@ -1,7 +1,7 @@
 <template>
   <div>
-    <h2>Camera Image from ROS</h2>
-    <img :src="imageSrc" alt="Camera Image" width="500" height="400" />
+    <h2>블랙박스</h2>
+    <img :src="imageSrc" alt="Camera Image" width="350" height="400" />
   </div>
 </template>
 
@@ -53,4 +53,16 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+p {
+  font-family: GoryeongStrawberry;
+  font-style: normal;
+  font-weight: normal;
+}
+
+h2 {
+  font-family: GoryeongStrawberry;
+  font-style: normal;
+  font-weight: normal;
+}
+</style>
