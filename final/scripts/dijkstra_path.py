@@ -82,13 +82,14 @@ class dijkstra_path_pub :
         self.end_node = 'A119BS010148'
 
         '''
-        self.start_node = 'A119BS010163'
-        self.end_node = 'A119BS010222'
+        self.nodes = [['A119BS010163', 'A119BS010222'], ['A119BS010222', 'A119BS010341']]
+        # self.start_node = 'A119BS010163'
+        # self.end_node = 'A119BS010222'
 
         self.global_path_msg = Path()
         self.global_path_msg.header.frame_id = '/map'
 
-        self.global_path_msg = self.calc_dijkstra_path_node(self.start_node, self.end_node)
+        self.global_path_msg = self.calc_dijkstra_path_node()
 
         rate = rospy.Rate(10) # 10hz
         while not rospy.is_shutdown():
@@ -97,25 +98,19 @@ class dijkstra_path_pub :
 
             rate.sleep()
 
-    def calc_dijkstra_path_node(self, start_node, end_node):
-
-        result, path = self.global_planner.find_shortest_path(start_node, end_node) 
-
-        #TODO: (10) dijkstra 경로 데이터를 ROS Path 메세지 형식에 맞춰 정의
-        point_path = path.get('point_path')
+    def calc_dijkstra_path_node(self):
         out_path = Path()
         out_path.header.frame_id = '/map'
-        '''
-        # dijkstra 경로 데이터 중 Point 정보를 이용하여 Path 데이터를 만들어 줍니다.
-
-        '''
-        if(result):
-            for point in point_path:
-                val = PoseStamped()
-                val.pose.position.x = point[0]
-                val.pose.position.y = point[1]
-                val.pose.position.z = point[2]
-                out_path.poses.append(val)
+        for node in self.nodes:
+            result, path = self.global_planner.find_shortest_path(node[0], node[1]) 
+            if(result):
+                point_path = path.get('point_path')
+                for point in point_path:
+                    val = PoseStamped()
+                    val.pose.position.x = point[0]
+                    val.pose.position.y = point[1]
+                    val.pose.position.z = point[2]
+                    out_path.poses.append(val)
 
         return out_path
 
