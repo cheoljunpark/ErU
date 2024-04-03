@@ -9,7 +9,7 @@ import sys
 from math import cos,sin,pi,sqrt,pow,atan2
 from geometry_msgs.msg import Point,PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry,Path
-from morai_msgs.msg import CtrlCmd,EgoVehicleStatus, GetTrafficLightStatus
+from morai_msgs.msg import CtrlCmd,EgoVehicleStatus, GetTrafficLightStatus, SetTrafficLight
 import numpy as np
 import tf
 from tf.transformations import euler_from_quaternion,quaternion_from_euler
@@ -67,10 +67,16 @@ class pure_pursuit :
         rospy.Subscriber("/odom", Odometry, self.odom_callback )
         rospy.Subscriber("/Ego_topic", EgoVehicleStatus, self.status_callback)
         rospy.Subscriber('/GetTrafficLightStatus', GetTrafficLightStatus, self.traffic_light_callback)
+        self.trafficlight_ctrl_cmd_pub = rospy.Publisher("/SetTrafficLight", SetTrafficLight, queue_size=10)
         self.ctrl_cmd_pub = rospy.Publisher("/ctrl_cmd", CtrlCmd, queue_size=10)
 
         self.ctrl_cmd_msg = CtrlCmd()
         self.ctrl_cmd_msg.longlCmdType = 1
+
+        self.trafficlight_ctrl_cmd_msg = SetTrafficLight()
+        self.traffic_light_time = 0.0
+        self.light_stop = False
+        self.prev_trafficlight_idx = ''
 
         self.is_path = False
         self.is_odom = False 
@@ -128,6 +134,15 @@ class pure_pursuit :
                     if self.now_time-self.prev_time>6.0:
                         self.bus_stop = False
                         self.prev_time = self.now_time
+                elif self.light_stop:
+                    if self.now_time - self.traffic_light_time>6.0:
+                        self.trafficlight_ctrl_cmd_msg.trafficLightIndex = self.prev_trafficlight_idx
+                        self.trafficlight_ctrl_cmd_msg.trafficLightStatus = 16
+                        self.light_stop = False
+                        self.traffic_light_time = self.now_time
+                        self.trafficlight_ctrl_cmd_pub.publish(self.trafficlight_ctrl_cmd_msg)
+
+
                 else:
                     self.current_waypoint = self.get_current_waypoint(self.status_msg,self.global_path)
                     self.target_velocity = self.velocity_list[self.current_waypoint]*3.6
@@ -148,31 +163,34 @@ class pure_pursuit :
                         self.ctrl_cmd_msg.accel = 0.0
                         self.ctrl_cmd_msg.brake = -output
 
-                    light_stop = False
                     ego_x = self.status_msg.position.x
                     ego_y = self.status_msg.position.y
                     ego_z = self.status_msg.position.z
-                    for idx, signal in self.trafficlights.items():
-                        if idx == self.traffic_light_idx:
-                            trafficlight_x = signal.point[0]
-                            trafficlight_y = signal.point[1]
-                            trafficlight_z = signal.point[2]
-                            
-                            dist_light = sqrt(pow(ego_x-trafficlight_x,2)+pow(ego_y-trafficlight_y,2)+pow(ego_z-trafficlight_z,2))
-                            if dist_light<=20.0:
-                                light_stop = True
 
-                    if light_stop:
+                    if self.traffic_light_idx!=self.prev_trafficlight_idx:
+                        for idx, signal in self.trafficlights.items():
+                            if idx == self.traffic_light_idx:
+                                trafficlight_x = signal.point[0]
+                                trafficlight_y = signal.point[1]
+                                trafficlight_z = signal.point[2]
+                                
+                                dist_light = sqrt(pow(ego_x-trafficlight_x,2)+pow(ego_y-trafficlight_y,2)+pow(ego_z-trafficlight_z,2))
+                                if dist_light<=25.0:
+                                    self.light_stop = True
+                                    self.prev_trafficlight_idx = idx
+
+                    if self.light_stop:
                         if self.traffic_light_status == 4 or self.traffic_light_status == 1:
                             self.ctrl_cmd_msg.accel = 0.0
                             self.ctrl_cmd_msg.brake = 1.0
+                            self.traffic_light_time = self.now_time
 
                     for bus in self.bus_stop_path:
                         if self.bus_idx==bus["idx"]:
                             continue
                         point = bus["point"]
                         dist_bus = sqrt(pow(ego_x-point[0], 2)+pow(ego_y-point[1], 2)+pow(ego_z-point[2],2))
-                        if dist_bus <= 3.5:
+                        if dist_bus <= 3.7:
                             self.bus_stop = True
                             self.bus_idx = bus["idx"]
                             break
