@@ -21,3 +21,11 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+### VS Code ###
+.vscode/
+
+# .env
+.env
+
+# .pyc
+.pyc

@@ -45,7 +45,7 @@ export default {
       currentPosition: [0, 0],
       customIcon: {
         url:
-          "https://downloadscdn5.freepik.com/download_vector/svg/24/24877/136/136470/136470113_bd014a45-1f53-4918-92ac-dc2d7db0c2c2.svg?token=exp=1711957941~hmac=d11487c4837f289af28f0ee75ab74008",
+          "https://img.icons8.com/emoji/48/bus-emoji.png",
         size: [38, 95],
       },
     };
