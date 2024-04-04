@@ -388,7 +388,7 @@
     </tr>
     <tr align="center">
         <td>
-        <b>제어, 판단</b><br> 
+        <b>인지, 제어, 판단</b><br>openCV를 활용해 line detecting 구현<br>Dijkstra 알고리즘을 활용해 global path 경로 계획 구현<br>pure pursuit 알고리즘을 활용해 local path 경로 구현<br>시연을 위한 신호등 제어<br>신호등, 버스 정류장 정보를 기반으로 정차 및 출발 기능 구현 
         <br/>
         </td>
         <td>
