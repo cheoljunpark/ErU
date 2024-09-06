@@ -1,4 +1,4 @@
-# 특화 프로젝트(모빌리티_자율주행) - 타유(ErU)
+# 특화 프로젝트(모빌리티\_자율주행) - 타유(ErU)
 
 <img src="./src/assets/logo.png" width="300"/><br>
 💻SSAFY 10기 2학기 특화 프로젝트💻<br>
@@ -6,14 +6,13 @@
 
 ---
 
-## 🐳[포팅 메뉴얼](https://lab.ssafy.com/s10-mobility-autodriving-sub2/S10P22A311/-/blob/master/exec/ErU_%ED%8F%AC%ED%8C%85%EB%A7%A4%EB%89%B4%EC%96%BC.pdf?ref_type=heads) 
+## 🐳[포팅 메뉴얼](https://lab.ssafy.com/s10-mobility-autodriving-sub2/S10P22A311/-/blob/master/exec/ErU_%ED%8F%AC%ED%8C%85%EB%A7%A4%EB%89%B4%EC%96%BC.pdf?ref_type=heads)
 
 ## 💡 프로젝트 콘셉트
 
 👨🏻‍👩🏻‍👦🏻‍👦🏻 **자녀 안심 귀가 자율주행 모니터링 서비스** 👨🏻‍👩🏻‍👦🏻‍👦🏻
 
 ### 등하교길 자율주행 스쿨버스
-
 
 - 안전하게 버스 정류장까지 자율주행
 - 우회전시 일시정지
@@ -24,20 +23,21 @@
 
 - 웹 화면을 통해 차량의 블랙박스 카메라, 위치, 속도 확인 가능
 
-
 ## ⚙️ 서비스 기능
 
 ### 인지
 
 💡 IMU, GPS, Camera 센서를 활용
 ![연결여부](./src/assets/lattice_lane_gif.gif)
+
 - Pedestrian Detecting(보행자 디텍팅)
 - BirdView
 - Semantic Segmentation
 
-
 ### 판단
+
 ![연결여부](./src/assets/bus_gif.gif)
+
 - Global Path
 - Local Path
 - Localization
@@ -52,8 +52,6 @@
 
 💡 실시간 위치를 빠르게 렌더링, 다양한 웹 브라우저 및 모바일에서 작동 가능한 경량 라이브러리인 Leaflet 사용
 
-
-
 ## 🏠 서비스 레이아웃
 
 ### 연결 여부
@@ -66,7 +64,6 @@
 
 ![실시간그래프](./src/assets/1.png)
 
-
 ## 🛠️ 기술 스택
 
 ### Frontend
@@ -78,6 +75,7 @@
 ![css3](https://img.shields.io/badge/css3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
 
 ### Automobile(ROS)
+
 ![ROS](https://img.shields.io/badge/ROS-000000?style=for-the-badge&logoColor=white)
 ![MORAI Simulator](https://img.shields.io/badge/MORAI_Simulator-000000?style=for-the-badge&logoColor=white)
 
@@ -93,10 +91,9 @@
 
 ![vscode](https://img.shields.io/badge/vscode-0078d7?style=for-the-badge&logo=visual%20studio&logoColor=white)
 
-
 ## 🛠️서비스 아키텍처
-![서비스아키텍처](./src/assets/architecture.png)
 
+![서비스아키텍처](./src/assets/architecture.png)
 
 ## 📁프로젝트 구조
 
@@ -320,21 +317,23 @@
  ┗ 📜main.js
 ```
 
-## 📃[발표자료](./src/assets/presentation.pptx) 
+## 📃[발표자료](./src/assets/presentation.pptx)
 
 ## 👥팀 구성원
 
 <table align="center">
-  <tr>
     <tr align="center">
         <td style="min-width: 250px;">
               <b>김윤지</b>
         </td>
         <td style="min-width: 250px;">
-              <b>노현진</b>
+              <b>박철준</b>
         </td>
         <td style="min-width: 250px;">
-              <b>박철준</b>
+              <b>부재희</b>
+        </td>
+        <td style="min-width: 250px;">
+              <b>최창환</b>
         </td>
     </tr>
     <tr align="center">
@@ -342,10 +341,13 @@
               <img src="./src/assets/01.png" width="100">
         </td>
         <td style="min-width: 250px;">
-              <img src="./src/assets/02.png" width="100">
+              <img src="./src/assets/03.png" width="100">
         </td>
         <td style="min-width: 250px;">
-              <img src="./src/assets/03.png" width="100">
+              <img src="./src/assets/04.png" width="100">
+        </td>
+        <td style="min-width: 250px;">
+              <img src="./src/assets/00.png" width="100">
         </td>
     </tr>
     <tr align="center">
@@ -354,47 +356,11 @@
         <br/>
         </td>
         <td>
-        <b>인지, 제어</b><br>
-        <br/>
-        </td>
-        <td>
         <b>Web(Frontend)</b><br> Vue 컴포넌트 개발<br>ROS 웹 소켓 구축<br> ROS 모라이 메시지 기반 데이터 시각화 구현
         <br/>
         </td>
-    </tr>
-  </tr>
-  <tr>
-    <tr align="center">
-        <td style="min-width: 250px;">
-              <b>부재희</b>
-        </td>
-        <td style="min-width: 250px;">
-              <b>이신애</b>
-        </td>
-        <td style="min-width: 250px;">
-              <b>최창환</b>
-        </td>
-    </tr>
-    <tr align="center">
-        <td style="min-width: 250px;">
-              <img src="./src/assets/04.png" width="100">
-        </td>
-        <td style="min-width: 250px;">
-              <img src="./src/assets/05.png" width="100">
-        </td>
-        <td style="min-width: 250px;">
-              <img src="./src/assets/00.png" width="100">
-        </td>
-    </tr>
-    <tr align="center">
         <td>
         <b>인지, 제어, 판단</b><br>openCV를 활용해 line detecting 구현<br>Dijkstra 알고리즘을 활용해 global path 경로 계획 구현<br>pure pursuit 알고리즘을 활용해 local path 경로 구현<br>시연을 위한 신호등 제어<br>신호등, 버스 정류장 정보를 기반으로 정차 및 출발 기능 구현 
-        <br/>
-        </td>
-        <td>
-        <b>Web(Front)</b><br> 웹 글씨체 폰트 및 디자인 레이아웃<br>
-프로젝트 메인로고 제작<br>
-디자인 피그마 작업
         <br/>
         </td>
         <td>
@@ -402,6 +368,4 @@
         <br/>
         </td>
     </tr>
-  </tr>
-
 </table>
